@@ -728,6 +728,58 @@
   .top25-table .trend-flat{ color:var(--chalk-dim); }
   .top25-table .trend-new{ color:var(--amber); font-weight:700; }
 
+  .info-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:15px;
+    height:15px;
+    border-radius:50%;
+    border:1px solid var(--chalk-dim);
+    color:var(--chalk-dim);
+    font-size:10px;
+    font-style:italic;
+    font-family:Georgia, serif;
+    cursor:pointer;
+    vertical-align:middle;
+  }
+  .info-icon:hover, .info-icon:focus{
+    border-color:var(--amber);
+    color:var(--amber);
+  }
+  .info-popover{
+    margin-top:10px;
+    padding:12px 14px;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    font-size:13px;
+    color:var(--chalk-dim);
+    max-width:60ch;
+  }
+
+  .last-next-section{
+    margin-top:40px;
+    padding-top:28px;
+    border-top:1px solid var(--panel-line);
+  }
+  .last-next-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+  @media (max-width:640px){
+    .last-next-grid{ grid-template-columns:1fr; }
+  }
+  .last-next-col-title{
+    font-size:14px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--chalk-dim);
+    margin:0 0 10px;
+  }
+
   .game-tag{
     display:inline-block;
     font-size:9px;
@@ -908,6 +960,51 @@
     <select id="seasonSelect"></select>
   </div>
 
+  <section class="top25-section" id="top25Section" style="display:none;">
+    <h2 class="national-ticker-title">Top 25</h2>
+    <p class="national-ticker-sub" id="top25Sub"></p>
+    <div class="top25-table-wrap">
+      <table class="top25-table">
+        <thead>
+          <tr>
+            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
+          </tr>
+        </thead>
+        <tbody id="top25Body"></tbody>
+      </table>
+    </div>
+    <div class="info-popover" id="colleyInfoPopover" style="display:none;">
+      The Colley Matrix is a bias-free rating method that ranks teams purely from who's beaten whom, using real results only — no polls, no opinion, no margin of victory. It can disagree with the human poll a lot early in a season, when few games have connected enough teams for the math to have much to go on.
+    </div>
+  </section>
+
+  <section class="last-next-section" id="lastNextSection" style="display:none;">
+    <h2 class="national-ticker-title">Top 25 Schedule</h2>
+    <p class="national-ticker-sub">Last week's ranked-vs-ranked games and upsets (spoiler-safe until you toggle spoilers), and next week's ranked matchups.</p>
+    <div class="last-next-grid">
+      <div class="last-next-col">
+        <h3 class="last-next-col-title">Last Week</h3>
+        <div id="lastWeekList"></div>
+      </div>
+      <div class="last-next-col">
+        <h3 class="last-next-col-title">Next Week</h3>
+        <div id="nextWeekList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="national-ticker" id="scheduleSection" style="display:none;">
+    <h2 class="national-ticker-title" id="scheduleTitle"></h2>
+    <p class="national-ticker-sub">Full season schedule — ranked opponents, rivalry games, and close/toss-up matchups flagged.</p>
+    <div id="scheduleList"></div>
+  </section>
+
+  <section class="national-ticker" id="upsetsSection" style="display:none;">
+    <h2 class="national-ticker-title">Major Upsets</h2>
+    <p class="national-ticker-sub">Real results, but no scores shown here — just a heads-up that something worth seeing happened.</p>
+    <div id="upsetsList"></div>
+  </section>
+
   <div class="results-head">
     <div class="results-title-group">
       <h2 id="resultsTitle">This week's games that matter</h2>
@@ -935,40 +1032,6 @@
   </div>
 
   <div id="results"></div>
-
-  <section class="national-ticker" id="nationalTicker" style="display:none;">
-    <h2 class="national-ticker-title">This Week in the Rankings</h2>
-    <p class="national-ticker-sub">Every game involving a ranked team, in kickoff order — not tied to your team's playoff path.</p>
-    <div id="nationalTickerList"></div>
-  </section>
-
-  <section class="top25-section" id="top25Section" style="display:none;">
-    <h2 class="national-ticker-title">Top 25</h2>
-    <p class="national-ticker-sub" id="top25Sub"></p>
-    <div class="top25-table-wrap">
-      <table class="top25-table">
-        <thead>
-          <tr>
-            <th>Rk</th><th>Team</th><th>Record</th><th>Trend</th><th>Colley</th><th>Last</th><th>Next</th>
-          </tr>
-        </thead>
-        <tbody id="top25Body"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="national-ticker" id="scheduleSection" style="display:none;">
-    <h2 class="national-ticker-title" id="scheduleTitle"></h2>
-    <p class="national-ticker-sub">Full season schedule — ranked opponents, rivalry games, and close/toss-up matchups flagged.</p>
-    <div id="scheduleList"></div>
-  </section>
-
-  <section class="national-ticker" id="upsetsSection" style="display:none;">
-    <h2 class="national-ticker-title">Major Upsets</h2>
-    <p class="national-ticker-sub">Real results, but no scores shown here — just a heads-up that something worth seeing happened.</p>
-    <div id="upsetsList"></div>
-  </section>
-
   <button class="share-cta" id="shareCta"></button>
   <p class="share-note-bottom" id="shareNoteBottom"></p>
   <section class="suggestion-box">
@@ -1004,7 +1067,20 @@
    ============================================================ */
 
 const YEAR = 2026;
-let WEEK = 1; // now mutable — the week picker actually switches this
+let WEEK = 1; // starting placeholder -- corrected to the real current week right after page load, via fetchCurrentWeek() below
+
+// Determines the real current week from the Worker's own calendar
+// lookup, comparing today's actual date against real week boundaries
+// -- rather than a hardcoded formula that would drift wrong the
+// moment a season's real schedule doesn't match some assumption.
+async function fetchCurrentWeek(year){
+  const url = `${WORKER_URL}/?year=${year}&mode=currentweek`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.week;
+}
 
 // Week 0 (Aug 28–29) already happened before Week 1 kicks off. Only
 // one Week 0 result is sourced here — TCU at North Carolina, in
@@ -1858,7 +1934,21 @@ function conferenceOf(team){
 // to #13 in the real Week 1 AP Poll -- this will need re-updating by
 // hand until the bigger Top 25 table work below exposes the live
 // current poll, at which point the default can pull from that instead.
-const defaultTeam = "Texas Tech";
+//
+// If the visitor has already favorited a team on this browser, use
+// that instead -- reading localStorage directly here (rather than via
+// loadPinnedTeams()/pinnedTeams below) since this runs earlier in the
+// file, before those are defined. First-ever-favorited team wins,
+// since pinnedTeams is append-ordered.
+function firstFavoritedTeam(){
+  try {
+    const raw = localStorage.getItem('cg_pinned_teams');
+    const arr = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(arr) && arr.length && TEAMS.includes(arr[0])) return arr[0];
+  } catch(e){}
+  return null;
+}
+const defaultTeam = firstFavoritedTeam() || "Texas Tech";
 const defaultConference = conferenceOf(defaultTeam) || "Big 12";
 conferenceSelect.value = defaultConference;
 populateTeams(defaultConference);
@@ -1896,6 +1986,14 @@ document.getElementById('btnViewWatch').addEventListener('click', () => {
   document.getElementById('btnViewWatch').classList.add('active');
   document.getElementById('btnViewPath').classList.remove('active');
   render();
+});
+document.getElementById('colleyInfoIcon').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const pop = document.getElementById('colleyInfoPopover');
+  pop.style.display = pop.style.display === 'none' ? '' : 'none';
+});
+document.getElementById('colleyInfoIcon').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') document.getElementById('colleyInfoIcon').click();
 });
 function watchabilityOrder(results){
   if (!showScores) return results; // no scores yet -- nothing to reorder toward
@@ -2142,24 +2240,72 @@ async function fetchNationalRankedGames(year, week){
   return data;
 }
 
-function renderNationalTicker(data){
-  const section = document.getElementById('nationalTicker');
-  const list = document.getElementById('nationalTickerList');
-  if (!data || !data.games || data.games.length === 0){
-    section.style.display = 'none';
+function isDoubleRanked(g){ return g.homeRank !== null && g.homeRank !== undefined && g.awayRank !== null && g.awayRank !== undefined; }
+function isUpsetGame(g){
+  if (g.home_score === null || g.home_score === undefined || g.away_score === null || g.away_score === undefined) return false;
+  if (!g.favoredTeam || g.winProb === null || g.winProb === undefined) return false;
+  const winner = g.home_score > g.away_score ? g.home : g.away;
+  return winner !== g.favoredTeam && g.winProb >= 0.75; // a real favorite actually lost
+}
+
+// "Last Week" column: ranked-vs-ranked matchups are shown either way
+// (that's not a spoiler by itself), but their score only appears once
+// spoilers are on. Upsets are the opposite -- their mere presence in
+// the list would reveal the outcome, so those are hidden entirely
+// until spoilers are on, and even then never show the exact score.
+function renderLastWeekColumn(data){
+  const list = document.getElementById('lastWeekList');
+  list.innerHTML = '';
+  if (!data || !data.games){
+    list.innerHTML = '<p class="empty-note">No games last week.</p>';
     return;
   }
-  section.style.display = '';
+  const doubleRanked = data.games.filter(isDoubleRanked);
+  const upsets = showScores ? data.games.filter(g => !isDoubleRanked(g) && isUpsetGame(g)) : [];
+
+  if (doubleRanked.length === 0 && upsets.length === 0){
+    list.innerHTML = '<p class="empty-note">No ranked-vs-ranked matchups or upsets last week.</p>';
+    return;
+  }
+  doubleRanked.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row';
+    const awayLabel = `#${g.awayRank} ${g.away}`;
+    const homeLabel = `#${g.homeRank} ${g.home}`;
+    const hasScore = g.home_score !== null && g.home_score !== undefined && g.away_score !== null && g.away_score !== undefined;
+    const scorePart = (showScores && hasScore) ? `<span class="game-meta">${g.away_score}-${g.home_score}</span>` : '<span class="game-meta">—</span>';
+    row.innerHTML = `<span class="matchup-text">${awayLabel} @ ${homeLabel}</span>${scorePart}`;
+    list.appendChild(row);
+  });
+  upsets.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row';
+    row.innerHTML = `
+      <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
+      <a class="game-meta" href="${g.link}" target="_blank" rel="noopener">Highlights →</a>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// "Next Week" column: no spoiler concerns, just every upcoming
+// ranked-involving game, chronologically, with the marquee matchup
+// flagged the same way the old single-week ticker did.
+function renderNextWeekColumn(data){
+  const list = document.getElementById('nextWeekList');
   list.innerHTML = '';
+  if (!data || !data.games || data.games.length === 0){
+    list.innerHTML = '<p class="empty-note">No ranked matchups scheduled yet.</p>';
+    return;
+  }
   data.games.forEach(g => {
     const row = document.createElement('div');
     const isMarquee = g.game_id === data.marqueeGameId;
-    const isClose = g.winProb !== null && g.winProb !== undefined && g.winProb <= 0.58;
     row.className = 'national-game-row' + (isMarquee ? ' marquee' : '');
     const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
     const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
     row.innerHTML = `
-      <span class="matchup-text">${isMarquee ? '<span class="marquee-tag">Game of the Week</span>' : ''}${isClose ? '<span class="game-tag close">Close Game</span>' : ''}${awayLabel} @ ${homeLabel}</span>
+      <span class="matchup-text">${isMarquee ? '<span class="marquee-tag">Game of the Week</span>' : ''}${awayLabel} @ ${homeLabel}</span>
       <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}</span>
     `;
     list.appendChild(row);
@@ -2212,10 +2358,10 @@ function renderTop25(data){
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${t.rank}</td>
+      <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
       <td>${t.school}</td>
       <td>${t.wins}-${t.losses}</td>
       <td>${trendCell(t.trend)}</td>
-      <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
       <td>${gameCell(t.lastGame, 'last')}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
@@ -2304,12 +2450,8 @@ function hasStaticFallback(){
   return selectedSeason === '2026' && (WEEK in WEEKLY_GAMES);
 }
 
-// Memoized so switching teams (which re-runs render()) doesn't
-// re-fetch the same national ticker data over and over — only a real
-// season/week change triggers a new fetch.
-let _lastNationalKey = null;
-// Major upsets — reuses the SAME data the national ticker already
-// fetched (no extra request). Spoiler-gated on purpose: the mere fact
+// Major upsets — reuses the SAME last-week data the "Last Week"
+// column already fetched (no extra request). Spoiler-gated on purpose: the mere fact
 // a game appears here is itself a spoiler (it means the favorite
 // lost), so this only ever shows once showScores is on. Even then,
 // deliberately never displays the actual score -- just enough to
@@ -2344,23 +2486,31 @@ function renderUpsets(data){
   });
 }
 
-let _lastNationalData = null;
-async function refreshNationalTicker(){
-  if (!useLiveData) { renderUpsets(null); return; }
+let _lastWeekData = null;
+let _lastLastNextKey = null;
+async function refreshLastNextWeek(){
+  const section = document.getElementById('lastNextSection');
+  if (!useLiveData) { section.style.display = 'none'; renderUpsets(null); return; }
   const key = `${selectedSeason}-${WEEK}`;
-  if (key !== _lastNationalKey) {
-    _lastNationalKey = key;
+  if (key !== _lastLastNextKey) {
+    _lastLastNextKey = key;
     try {
-      const data = await fetchNationalRankedGames(selectedSeason, WEEK);
+      const prevWeek = WEEK - 1;
+      const [lastData, nextData] = await Promise.all([
+        prevWeek >= 0 ? fetchNationalRankedGames(selectedSeason, prevWeek) : Promise.resolve({ games: [] }),
+        fetchNationalRankedGames(selectedSeason, WEEK + 1)
+      ]);
       if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
-      _lastNationalData = data;
-      renderNationalTicker(data);
+      _lastWeekData = lastData;
+      section.style.display = '';
+      renderLastWeekColumn(lastData);
+      renderNextWeekColumn(nextData);
     } catch (err) {
-      document.getElementById('nationalTicker').style.display = 'none';
-      _lastNationalData = null;
+      section.style.display = 'none';
+      _lastWeekData = null;
     }
   }
-  renderUpsets(_lastNationalData);
+  renderUpsets(_lastWeekData);
 }
 
 async function render(){
@@ -2368,7 +2518,7 @@ async function render(){
   applyTeamTheme(team);
   renderPinnedUI(team);
   updateShareCta();
-  refreshNationalTicker();
+  refreshLastNextWeek();
   refreshTop25();
   refreshSchedule();
 
@@ -2612,6 +2762,16 @@ document.getElementById('shareCta').addEventListener('click', () => doShare('sha
 runIntroAnimation(() => {
   render();
   spinWeekJersey(WEEK);
+
+  // Correct the placeholder Week 1 default to the real current week,
+  // once we know it -- doesn't block the initial page paint above.
+  fetchCurrentWeek(selectedSeason).then(realWeek => {
+    if (realWeek === null || realWeek === undefined || realWeek === WEEK) return;
+    WEEK = realWeek;
+    weekSelect.value = WEEK;
+    spinWeekJersey(WEEK);
+    render();
+  }).catch(() => {}); // silently keep the Week 1 placeholder if this fails -- not worth surfacing an error for
 });
 </script>
 </body>
