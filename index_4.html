@@ -1,0 +1,2618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RootForGuide — Know who to root for</title>
+<!-- CSP removed from this file on purpose: frame-ancestors doesn't
+     work via a <meta> tag at all (real spec limitation, HTTP-header-
+     only), and the rest of a strict CSP here breaks in-chat/sandboxed
+     previews of this file. The correct place to set CSP + frame-
+     ancestors is as real HTTP response headers at your host — since
+     this site sits behind Cloudflare, add them there (Rules ->
+     Transform Rules -> Modify Response Header, or in the Worker)
+     once it's actually deployed. Referrer policy below is fine as a
+     meta tag (it's not one of the header-only-restricted directives)
+     and doesn't cause the same preview problem. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --field:#0A2557;
+    --field-line:#1B3E85;
+    --chalk:#F7F5F0;
+    --chalk-dim:#A9B9E0;
+    --amber:#D6202E;
+    --amber-dim:#8F1620;
+    --root-for:#F7F5F0;
+    --root-for-bg:rgba(0,0,0,0.35);
+    --root-against:#F7F5F0;
+    --root-against-bg:rgba(0,0,0,0.35);
+    --scout:#A9B9E0;
+    --panel:#12306B;
+    --panel-line:#2A4C93;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--field);
+    color:var(--chalk);
+    font-family:'Source Sans 3', sans-serif;
+    line-height:1.5;
+    background-image:
+      radial-gradient(ellipse 1100px 620px at 50% -8%, rgba(255,255,255,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 400px at 100% 15%, rgba(255,255,255,0.03), transparent 65%),
+      repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(243,239,230,0.035) 79px, rgba(243,239,230,0.035) 80px);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px 80px; position:relative;}
+
+  /* ---------- Intro countdown badge (non-blocking) ---------- */
+  .intro-badge{
+    display:inline-block;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:13px;
+    color:var(--amber);
+    -webkit-text-stroke:1px var(--chalk);
+    paint-order:stroke fill;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:3px;
+    padding:1px 7px;
+    margin-left:6px;
+    vertical-align:middle;
+    opacity:0;
+    transition:opacity 0.15s ease;
+  }
+  .intro-badge.showing{ opacity:1; }
+
+  /* ---------- Reserved ad space (160x600 pillars) ---------- */
+  .ad-pillar{
+    display:none; /* only shown on wide viewports, see media query below */
+    position:fixed;
+    top:140px;
+    width:160px;
+    height:600px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.08)), var(--panel);
+    border:1px dashed var(--panel-line);
+    border-radius:6px;
+    align-items:center;
+    justify-content:center;
+    z-index:1;
+  }
+  .ad-pillar.left{ left:max(16px, calc(50% - 380px - 176px)); }
+  .ad-pillar.right{ right:max(16px, calc(50% - 380px - 176px)); }
+  .ad-pillar-inner{
+    text-align:center;
+    color:var(--chalk-dim);
+  }
+  .ad-label{
+    display:block;
+    font-size:12px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    margin-bottom:4px;
+  }
+  .ad-size{
+    display:block;
+    font-size:11px;
+    opacity:0.7;
+  }
+  @media (min-width:1300px){
+    .ad-pillar{ display:flex; }
+  }
+
+  /* ---------- Header ---------- */
+  header{padding:56px 0 36px;border-bottom:1px solid var(--field-line);}
+  .header-top{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .brand-group{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .logo-jersey{
+    position:relative;
+    display:block;
+    flex-shrink:0;
+    width:46px;
+    height:46px;
+  }
+  .logo-jersey svg{
+    display:block;
+    width:100%;
+    height:100%;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,0.4));
+  }
+  .wordmark{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:52px;
+    letter-spacing:0.5px;
+    line-height:0.95;
+    margin:0;
+    color:var(--chalk);
+  }
+  .wordmark span{color:var(--amber);}
+  .wordmark-tld{
+    color:var(--chalk-dim) !important;
+    font-size:0.42em;
+    font-weight:600;
+    letter-spacing:0.3px;
+    vertical-align:baseline;
+  }
+  .sport-badge{
+    font-size:13px;
+    font-weight:600;
+    color:var(--amber);
+    background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08)), var(--panel);
+    border:1px solid var(--panel-line);
+    padding:5px 11px;
+    border-radius:3px;
+    white-space:nowrap;
+    box-shadow:0 2px 5px rgba(0,0,0,0.25);
+  }
+  .logo-jersey-number{
+    position:absolute;
+    top:54%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:19px;
+    line-height:1;
+    color:var(--field);
+    -webkit-text-stroke:1px var(--amber);
+    paint-order:stroke fill;
+    pointer-events:none;
+  }
+  .logo-jersey-number.settled{
+    animation:jersey-settle 0.35s ease-out;
+  }
+  @keyframes jersey-settle{
+    0%{ transform:translate(-50%,-50%) scale(1.3); }
+    60%{ transform:translate(-50%,-50%) scale(0.92); }
+    100%{ transform:translate(-50%,-50%) scale(1); }
+  }
+  .rank-arrow{
+    font-size:0.6em;
+    font-weight:700;
+    vertical-align:middle;
+  }
+  .rank-arrow.up{color:#5FBF6E;}
+  .rank-arrow.down{color:var(--amber);}
+  .rank-arrow.flat{color:var(--chalk-dim);}
+
+  .team-snapshot{
+    display:flex;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .snap-col{
+    flex:1;
+    background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.08)), var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    padding:12px 14px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.25);
+  }
+  .snap-label{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+    margin-bottom:4px;
+  }
+  .snap-value{
+    display:block;
+    font-size:15px;
+    font-weight:600;
+    color:var(--chalk);
+  }
+  .snap-value.muted{
+    color:var(--chalk-dim);
+    font-weight:400;
+    font-style:italic;
+  }
+  .snap-value .snap-result{
+    display:inline-block;
+    font-weight:800;
+    padding:1px 6px;
+    border-radius:3px;
+    margin-right:6px;
+    font-size:12px;
+  }
+  .snap-value .snap-result.win{background:var(--root-for-bg); color:var(--root-for);}
+  .snap-value .snap-result.loss{background:var(--root-against-bg); color:var(--root-against);}
+
+  .tm{
+    font-size:0.55em;
+    vertical-align:super;
+    font-weight:600;
+    opacity:0.85;
+    margin-left:1px;
+  }
+  .tagline{
+    margin:12px 0 0;
+    font-size:18px;
+    color:var(--chalk-dim);
+    max-width:46ch;
+  }
+
+  .site-settings{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+    margin-top:20px;
+  }
+  .setting-block{
+    min-width:220px;
+  }
+  .setting-label{
+    margin:0 0 6px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+  }
+
+  /* ---------- Picker ---------- */
+  .picker{padding:36px 0 8px;}
+  .field-label{
+    font-size:14px;
+    color:var(--chalk-dim);
+    margin:0 0 8px;
+  }
+  select{
+    width:100%;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:20px;
+    font-weight:600;
+    padding:14px 16px;
+    background-color:var(--panel);
+    color:var(--chalk);
+    border:1px solid var(--panel-line);
+    border-radius:4px;
+    appearance:none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--amber) 50%),
+      linear-gradient(135deg, var(--amber) 50%, transparent 50%),
+      linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.12));
+    background-position: calc(100% - 22px) calc(1.1em + 2px), calc(100% - 16px) calc(1.1em + 2px), 0 0;
+    background-size: 6px 6px, 6px 6px, 100% 100%;
+    background-repeat: no-repeat;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.04);
+  }
+  select:focus{outline:2px solid var(--amber); outline-offset:2px;}
+
+  /* ---------- Results ---------- */
+  .results-title-group{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .pin-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:4px;
+    color:var(--chalk-dim);
+    display:inline-flex;
+    align-items:center;
+    transition:color 0.15s ease, transform 0.15s ease;
+  }
+  .pin-btn svg{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linejoin:round; }
+  .pin-btn:hover{ transform:scale(1.1); }
+  .pin-btn.pinned{ color:var(--amber); }
+  .pin-btn.pinned svg{ fill:var(--amber); stroke:var(--amber); }
+  .pin-btn:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  .share-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:4px;
+    color:var(--chalk-dim);
+    display:inline-flex;
+    align-items:center;
+    transition:color 0.15s ease, transform 0.15s ease;
+  }
+  .share-btn svg{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
+  .share-btn:hover{ color:var(--amber); transform:scale(1.1); }
+  .share-btn:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  .share-note{
+    font-size:12px;
+    color:var(--chalk-dim);
+    margin:-10px 0 16px;
+  }
+
+  .share-cta{
+    display:block;
+    width:100%;
+    margin:28px 0 8px;
+    padding:16px 20px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.3px;
+    color:var(--field);
+    background:linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.08)), var(--amber);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,0.35);
+    transition:transform 0.1s ease, filter 0.15s ease;
+  }
+  .share-cta:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .share-cta:active{ transform:translateY(0px); }
+  .share-note-bottom{
+    text-align:center;
+    font-size:13px;
+    color:var(--chalk-dim);
+    margin:8px 0 0;
+  }
+
+  .pinned-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:-8px 0 18px;
+  }
+  .pinned-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-left:4px solid var(--amber);
+    border-radius:4px;
+    padding:5px 8px 5px 10px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--chalk);
+    cursor:pointer;
+    box-shadow:0 2px 5px rgba(0,0,0,0.2);
+  }
+  .pinned-chip.active{
+    box-shadow: inset 0 0 0 1px var(--amber), 0 2px 5px rgba(0,0,0,0.2);
+  }
+  .pinned-chip .unpin{
+    color:var(--chalk-dim);
+    font-weight:700;
+    padding:0 2px;
+    line-height:1;
+  }
+  .pinned-chip .unpin:hover{ color:var(--amber); }
+
+  .results-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin:44px 0 18px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--field-line);
+  }
+  .results-head h2{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:700;
+    font-size:24px;
+    margin:0;
+    letter-spacing:0.3px;
+  }
+  .results-head .week-tag{
+    color:var(--chalk-dim);
+    font-size:14px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .week-select-inline{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    color:var(--amber);
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:3px;
+    padding:2px 6px;
+    cursor:pointer;
+  }
+  .week-select-inline:focus{outline:2px solid var(--amber); outline-offset:1px;}
+
+  .spoiler-toggle-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+  }
+  .spoiler-toggle-label{
+    font-size:13px;
+    color:var(--chalk-dim);
+  }
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:38px;
+    height:22px;
+    flex-shrink:0;
+  }
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+  }
+  .switch-slider{
+    position:absolute;
+    inset:0;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:22px;
+    transition:background .15s ease;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .switch-slider::before{
+    content:"";
+    position:absolute;
+    width:16px;
+    height:16px;
+    left:2px;
+    top:2px;
+    background:var(--chalk);
+    border-radius:50%;
+    transition:transform .15s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,0.4);
+  }
+  .switch input:checked + .switch-slider{
+    background:var(--amber);
+  }
+  .switch input:checked + .switch-slider::before{
+    transform:translateX(16px);
+  }
+  .switch input:focus-visible + .switch-slider{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+
+  .game-card{
+    display:grid;
+    grid-template-columns:72px 1fr;
+    gap:0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 45%),
+      var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    margin-bottom:14px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow:hidden;
+  }
+  .game-card:last-child{margin-bottom:0;}
+  .score-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:18px 6px;
+    background:rgba(0,0,0,0.16);
+    border-right:1px dashed var(--panel-line);
+  }
+  .content-col{
+    padding:18px 20px 18px 18px;
+  }
+
+  .score-badge{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:40px;
+    line-height:1;
+    letter-spacing:-1px;
+    color:var(--amber);
+    -webkit-text-stroke:2px var(--chalk);
+    paint-order:stroke fill;
+    text-shadow:2.5px 2.5px 0 rgba(0,0,0,0.4);
+    padding-top:2px;
+  }
+  .score-badge.elimination{
+    color:var(--field);
+    -webkit-text-stroke:2px var(--chalk);
+    background:var(--amber);
+    border-radius:6px;
+    padding:2px 6px;
+    text-shadow:2.5px 2.5px 0 rgba(0,0,0,0.4);
+  }
+  .elimination-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--field);
+    background:var(--amber);
+    padding:2px 8px;
+    border-radius:3px;
+    margin-bottom:6px;
+  }
+  .score-sub{
+    font-size:9.5px;
+    line-height:1.25;
+    color:var(--chalk-dim);
+    letter-spacing:0.2px;
+    text-transform:uppercase;
+    text-align:center;
+    margin-top:2px;
+  }
+
+  .matchup{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    margin:0 0 6px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .tier-tag{
+    font-size:12px;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:3px;
+    color:var(--chalk-dim);
+    border:1px solid var(--panel-line);
+  }
+  .root-tag{
+    font-size:13px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:3px;
+  }
+  .root-tag.for{background:var(--root-for-bg); color:var(--root-for); border:1px solid var(--root-for);}
+  .root-tag.against{background:var(--root-against-bg); color:var(--root-against); border:1px solid var(--root-against);}
+  .odds{
+    font-size:13px;
+    color:var(--scout);
+  }
+  .reason{
+    font-size:15px;
+    color:var(--chalk-dim);
+    margin:0 0 10px;
+    max-width:52ch;
+  }
+
+  .kickoff-line{
+    font-size:12.5px;
+    color:var(--chalk-dim);
+    margin-bottom:6px;
+    opacity:0.85;
+  }
+  .status-badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:1px 7px;
+    border-radius:3px;
+    margin-left:4px;
+    opacity:1;
+  }
+  .status-badge.live{
+    background:var(--root-against-bg);
+    color:var(--chalk);
+  }
+  .status-badge.final{
+    background:var(--panel-line);
+    color:var(--chalk-dim);
+  }
+  .watch-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    padding-top:8px;
+    border-top:1px solid var(--field-line);
+  }
+  .watch-icon{
+    color:var(--amber);
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .watch-text{color:var(--chalk-dim);}
+  .watch-text a{color:var(--amber); text-decoration:none; font-weight:600;}
+  .watch-text a:hover{text-decoration:underline;}
+  .watch-text .eta{color:var(--chalk-dim); font-weight:400; font-size:12px;}
+  .watch-text.final-score{color:var(--chalk); font-weight:700;}
+
+  .empty-note{
+    color:var(--chalk-dim);
+    font-size:15px;
+    padding:20px 0;
+  }
+
+  .national-ticker{
+    margin-top:40px;
+    padding-top:28px;
+    border-top:1px solid var(--panel-line);
+  }
+  .national-ticker-title{
+    font-family:'Anton', sans-serif;
+    font-size:22px;
+    letter-spacing:0.3px;
+    margin:0 0 4px;
+  }
+  .national-ticker-sub{
+    color:var(--chalk-dim);
+    font-size:13px;
+    margin:0 0 18px;
+  }
+  .national-game-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    margin-bottom:8px;
+  }
+  .national-game-row.marquee{
+    border-color:var(--amber);
+    box-shadow:0 0 0 1px var(--amber) inset;
+  }
+  .national-game-row .matchup-text{
+    font-size:14px;
+    font-weight:600;
+  }
+  .national-game-row .marquee-tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--field);
+    background:var(--amber);
+    border-radius:4px;
+    padding:2px 6px;
+    margin-right:8px;
+  }
+  .national-game-row .game-meta{
+    font-size:12px;
+    color:var(--chalk-dim);
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  .top25-section{
+    margin-top:40px;
+    padding-top:28px;
+    border-top:1px solid var(--panel-line);
+  }
+  .top25-table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+  }
+  .top25-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  .top25-table th{
+    text-align:left;
+    padding:10px 12px;
+    background:var(--panel);
+    color:var(--chalk-dim);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    white-space:nowrap;
+  }
+  .top25-table td{
+    padding:9px 12px;
+    border-top:1px solid var(--panel-line);
+    white-space:nowrap;
+  }
+  .top25-table .trend-up{ color:#4ade80; }
+  .top25-table .trend-down{ color:#f87171; }
+  .top25-table .trend-flat{ color:var(--chalk-dim); }
+  .top25-table .trend-new{ color:var(--amber); font-weight:700; }
+
+  .game-tag{
+    display:inline-block;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    border-radius:4px;
+    padding:2px 5px;
+    margin-right:5px;
+  }
+  .game-tag.rivalry{ background:#a855f7; color:#fff; }
+  .game-tag.close{ background:#3b82f6; color:#fff; }
+  .game-tag.ranked{ background:var(--amber); color:var(--field); }
+
+  .view-toggle-row{
+    display:inline-flex;
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .view-toggle-btn{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.2px;
+    padding:8px 16px;
+    border:none;
+    background:var(--panel);
+    color:var(--chalk-dim);
+    cursor:pointer;
+  }
+  .view-toggle-btn.active{
+    background:var(--amber);
+    color:var(--field);
+  }
+
+  .suggestion-box{
+    margin-top:56px;
+    padding:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  }
+  .suggestion-title{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:700;
+    font-size:20px;
+    color:var(--chalk);
+    margin:0 0 4px;
+  }
+  .suggestion-sub{
+    font-size:14px;
+    color:var(--chalk-dim);
+    margin:0 0 14px;
+  }
+  .suggestion-input{
+    width:100%;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:15px;
+    color:var(--chalk);
+    background:var(--field);
+    border:1px solid var(--panel-line);
+    border-radius:4px;
+    padding:10px 12px;
+    resize:vertical;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .suggestion-input:focus{outline:2px solid var(--amber); outline-offset:1px;}
+  .suggestion-submit{
+    margin-top:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.06)), var(--amber);
+    border:1px solid var(--panel-line);
+    color:var(--field);
+    font-weight:700;
+    font-size:14px;
+    padding:9px 18px;
+    border-radius:4px;
+    cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  }
+  .suggestion-submit:hover{ filter:brightness(1.08); }
+  .suggestion-note{
+    margin:10px 0 0;
+    font-size:13px;
+    color:var(--chalk-dim);
+  }
+
+  footer{
+    margin-top:56px;
+    padding-top:20px;
+    border-top:1px solid var(--field-line);
+    font-size:13px;
+    color:var(--amber-dim);
+  }
+  footer p{margin:0 0 10px;}
+  footer p:last-child{margin-bottom:0;}
+  .legal-line{
+    font-size:11px;
+    line-height:1.5;
+    color:var(--chalk-dim);
+    opacity:0.75;
+  }
+
+  @media (max-width:480px){
+    .wordmark{font-size:40px;}
+    .logo-jersey{width:36px; height:36px;}
+    .logo-jersey-number{font-size:15px;}
+    .game-card{grid-template-columns:54px 1fr;}
+    .content-col{padding:14px 14px 14px 12px;}
+    .score-col{padding:14px 4px;}
+    .score-badge{font-size:28px; -webkit-text-stroke-width:1.4px; text-shadow:1.5px 1.5px 0 rgba(0,0,0,0.4);}
+    .score-sub{font-size:8px;}
+    .matchup{font-size:19px;}
+  }
+</style>
+</head>
+<body>
+<!-- Reserved ad space: standard 160x600 "Wide Skyscraper" pillars.
+     Fixed-position, outside the content column, so they never cover
+     or shift anything. Hidden below 1300px where there's no room to
+     show them without crowding the page. Swap the placeholder div
+     content for a real ad unit (e.g. <ins class="adsbygoogle">) when
+     ready to monetize. -->
+<div class="ad-pillar left" id="adPillarLeft" aria-hidden="true">
+  <div class="ad-pillar-inner">
+    <span class="ad-label">Advertisement</span>
+    <span class="ad-size">160 × 600</span>
+  </div>
+</div>
+<div class="ad-pillar right" id="adPillarRight" aria-hidden="true">
+  <div class="ad-pillar-inner">
+    <span class="ad-label">Advertisement</span>
+    <span class="ad-size">160 × 600</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="header-top">
+      <div class="brand-group">
+        <p class="wordmark">RootFor<span id="wordmarkGuide">Guide</span><span class="wordmark-tld">.com</span></p>
+        <div class="logo-jersey" role="img" aria-label="Current college football week">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M17 3 L9 9 L3 19 L11 23 L13 15 L13 45 L35 45 L35 15 L37 23 L45 19 L39 9 L31 3 L27 7 L24 5 L21 7 Z"
+                  fill="var(--chalk)" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          <span class="logo-jersey-number" id="weekJerseyNumber">–</span>
+        </div>
+      </div>
+    </div>
+    <p class="tagline">Pick your team. We'll show you what games should matter to you this week — and who to root for, with a Game Gravity<span class="tm">™</span> score for what's actually at stake.</p>
+
+    <div class="site-settings">
+      <div class="setting-block">
+        <p class="setting-label">Spoilers</p>
+        <label class="spoiler-toggle-row" for="spoilerToggle">
+          <span class="switch">
+            <input type="checkbox" id="spoilerToggle">
+            <span class="switch-slider"></span>
+          </span>
+          <span class="spoiler-toggle-label">Reveal scores</span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <div class="picker">
+    <p class="field-label">Conference <span class="intro-badge" id="introBadge"></span></p>
+    <select id="conferenceSelect"></select>
+
+    <p class="field-label" style="margin-top:20px;">Team</p>
+    <select id="teamSelect"></select>
+
+    <p class="field-label" style="margin-top:20px;">Season</p>
+    <select id="seasonSelect"></select>
+  </div>
+
+  <div class="results-head">
+    <div class="results-title-group">
+      <h2 id="resultsTitle">This week's games that matter</h2>
+      <button class="pin-btn" id="pinBtn" title="Pin this team" aria-label="Pin this team">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L14.5 8.5 L21 9 L16 13.5 L17.5 20 L12 16.5 L6.5 20 L8 13.5 L3 9 L9.5 8.5 Z" /></svg>
+      </button>
+      <button class="share-btn" id="shareBtn" title="Share this team's Game Gravity picks" aria-label="Share">
+        <svg viewBox="0 0 24 24" width="17" height="17"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+      </button>
+    </div>
+    <span class="week-tag">
+      <select id="weekSelect" class="week-select-inline"></select>
+      <span id="weekTagRest"></span>
+    </span>
+  </div>
+
+  <div class="pinned-row" id="pinnedRow"></div>
+  <p class="share-note" id="shareNote"></p>
+
+  <div class="team-snapshot" id="teamSnapshot"></div>
+
+  <div class="view-toggle-row" id="viewToggleRow" style="display:none;">
+    <button class="view-toggle-btn active" id="btnViewPath" data-view="path">Your Path</button>
+    <button class="view-toggle-btn" id="btnViewWatch" data-view="watch">What to Watch</button>
+  </div>
+
+  <div id="results"></div>
+
+  <section class="national-ticker" id="nationalTicker" style="display:none;">
+    <h2 class="national-ticker-title">This Week in the Rankings</h2>
+    <p class="national-ticker-sub">Every game involving a ranked team, in kickoff order — not tied to your team's playoff path.</p>
+    <div id="nationalTickerList"></div>
+  </section>
+
+  <section class="top25-section" id="top25Section" style="display:none;">
+    <h2 class="national-ticker-title">Top 25</h2>
+    <p class="national-ticker-sub" id="top25Sub"></p>
+    <div class="top25-table-wrap">
+      <table class="top25-table">
+        <thead>
+          <tr>
+            <th>Rk</th><th>Team</th><th>Record</th><th>Trend</th><th>Colley</th><th>Last</th><th>Next</th>
+          </tr>
+        </thead>
+        <tbody id="top25Body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="national-ticker" id="scheduleSection" style="display:none;">
+    <h2 class="national-ticker-title" id="scheduleTitle"></h2>
+    <p class="national-ticker-sub">Full season schedule — ranked opponents, rivalry games, and close/toss-up matchups flagged.</p>
+    <div id="scheduleList"></div>
+  </section>
+
+  <section class="national-ticker" id="upsetsSection" style="display:none;">
+    <h2 class="national-ticker-title">Major Upsets</h2>
+    <p class="national-ticker-sub">Real results, but no scores shown here — just a heads-up that something worth seeing happened.</p>
+    <div id="upsetsList"></div>
+  </section>
+
+  <button class="share-cta" id="shareCta"></button>
+  <p class="share-note-bottom" id="shareNoteBottom"></p>
+  <section class="suggestion-box">
+    <p class="suggestion-title">Something missing? Something wrong? Tell us.</p>
+    <p class="suggestion-sub">Wrong odds, a team that should be ranked, a feature idea — whatever it is.</p>
+    <textarea id="suggestionText" class="suggestion-input" rows="3" placeholder="Type your suggestion here…" maxlength="1000"></textarea>
+    <button class="suggestion-submit" id="suggestionSubmit">Send Feedback</button>
+    <p class="suggestion-note" id="suggestionNote"></p>
+  </section>
+
+  <footer>
+    <p>Game Gravity<span class="tm">™</span> is built from public rankings and betting-market data — no invented metric, no black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
+    <p class="legal-line">RootForGuide.com is an independent fan resource and is not affiliated with, endorsed by, or sponsored by the NCAA, the College Football Playoff, any conference, or any school. Team names are used to identify real, publicly reported games and results. Betting lines shown are for informational context only — this site does not accept wagers. If you or someone you know has a gambling problem, call 1-800-GAMBLER. Must be 21+ to gamble where applicable. © 2026 RootForGuide.com. All rights reserved.</p>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   SAMPLE SEASON DATA
+   Shaped the same way the live collegefootballdata.com API
+   responses are — swap this block for real API calls later.
+   ============================================================ */
+
+/* ============================================================
+   LIVE SEASON DATA — 2026 Week 1 (Sept 5–6)
+   Real preseason AP Top 25 (released Aug 17, 2026) and the actual
+   Week 1 schedule. Week 0 (Aug 28–29) already happened, so this is
+   the upcoming slate as of today. A couple of poll slots that
+   weren't clearly confirmed in reporting are marked below — swap
+   this whole block for live API calls once wired to a real feed.
+   Season just started, so nobody has a resume yet (see TEAM_GAMES
+   below) — that's accurate, not a bug.
+   ============================================================ */
+
+const YEAR = 2026;
+let WEEK = 1; // now mutable — the week picker actually switches this
+
+// Week 0 (Aug 28–29) already happened before Week 1 kicks off. Only
+// one Week 0 result is sourced here — TCU at North Carolina, in
+// Dublin — but the structure supports adding more as they're found.
+const WEEK_0_GAMES = [
+  {id:401, home_team:"North Carolina", away_team:"TCU", kickoffUTC:"2026-08-29T12:00:00Z", network:"ESPN", venue:"Dublin, Ireland (Aviva Stadium)", home_score:15, away_score:10}
+];
+const WEEK_0_LINES = {}; // no line sourced for this one — left blank, not guessed
+
+const WEEKLY_GAMES = { 0: WEEK_0_GAMES };
+
+const WEEKLY_LINES = { 0: WEEK_0_LINES };
+
+const RANKINGS = [
+  {rank:1,school:"Ohio State"},{rank:2,school:"Oregon"},{rank:3,school:"Georgia"},
+  {rank:4,school:"Notre Dame"},{rank:5,school:"Texas"},{rank:6,school:"Indiana"},
+  {rank:7,school:"Miami (FL)"},{rank:8,school:"Texas A&M"},{rank:9,school:"Ole Miss"},
+  {rank:10,school:"Oklahoma"},{rank:11,school:"LSU"},{rank:12,school:"Alabama"},
+  {rank:13,school:"Texas Tech"}, // real Week 1 AP Poll — swapped from preseason (12/13 flipped)
+  {rank:14,school:"BYU"},{rank:14,school:"USC"}, // confirmed tied at 14 (839 points each)
+  {rank:16,school:"Michigan"},{rank:17,school:"Washington"},{rank:18,school:"Penn State"},
+  {rank:21,school:"Utah"}, // confirmed, 304 points
+  {rank:22,school:"Iowa"},
+  {rank:23,school:"Houston"} // confirmed
+  // 19-20 not confirmed in sourcing, left out rather than guessed
+];
+
+// The industry-standard switch: AP Top 25 is the reference poll for
+// the first chunk of the season. The CFP committee releases its own
+// weekly Top 25 starting in early November — once that begins, it
+// (not the AP poll) is what actually determines playoff selection,
+// so that's what the app should show. The real 2026 CFP committee
+// schedule has its first ranking the week of Nov 2–3, which lands
+// around the Week 10 slate of games — swap RANKINGS for the real
+// CFP release once it's out, and this label follows automatically.
+const CFP_START_WEEK = 10;
+function pollSource(week){
+  return week >= CFP_START_WEEK ? "CFP" : "AP";
+}
+
+// Rank movement vs. the previous week's poll. Empty right now because
+// Week 1 IS the preseason poll — there's no earlier ranking to compare
+// against yet, same as real broadcasts showing no arrow in Week 1.
+// Once Week 2's poll is loaded, populate this with {team: delta}
+// (positive = moved up, negative = moved down) and arrows appear
+// automatically wherever rankBadge is used.
+const RANK_MOVEMENT = {};
+function rankBadge(team, withArrow){
+  const r = rankOf(team);
+  if (!r) return '';
+  let badge = `#${r} `;
+  if (withArrow && RANK_MOVEMENT[team] !== undefined){
+    const delta = RANK_MOVEMENT[team];
+    if (delta > 0) badge = `#${r} <span class="rank-arrow up">▲${delta}</span> `;
+    else if (delta < 0) badge = `#${r} <span class="rank-arrow down">▼${Math.abs(delta)}</span> `;
+    else badge = `#${r} <span class="rank-arrow flat">–</span> `;
+  }
+  return badge;
+}
+
+// For LIVE-fetched results (any year via the Worker), the Worker
+// already computed real ranks server-side and includes them on each
+// result — use those directly instead of the local rankBadge()
+// lookup, which only knows the hardcoded 2026 static RANKINGS array
+// and would otherwise show no rank at all for a real 2025 team like
+// Miami. Falls back to the local lookup for static (non-live) data.
+function rankBadgeForResult(result, side){
+  const liveRank = side === 'home' ? result.homeRank : result.awayRank;
+  if (liveRank !== undefined && liveRank !== null) return `#${liveRank} `;
+  const team = side === 'home' ? result.home : result.away;
+  return rankBadge(team);
+}
+
+// Kickoff times as sourced (ET) converted to UTC ISO timestamps, so
+// they can be re-displayed in any team's local timezone. All Week 1
+// games below are Saturday, Sept 5, 2026 ET, except where noted.
+const GAMES_WEEK_1 = [
+  {id:501, home_team:"Texas Tech", away_team:"Abilene Christian", kickoffUTC:"2026-09-05T23:00:00Z", network:"FS1", venue:"Lubbock, TX"},
+  {id:502, home_team:"Cincinnati", away_team:"Boston College", kickoffUTC:"2026-09-05T19:30:00Z", network:"FOX", venue:"Cincinnati, OH"},
+  {id:503, home_team:"Kansas State", away_team:"Nicholls", kickoffUTC:"2026-09-05T23:00:00Z", network:"ESPN+", venue:"Manhattan, KS"},
+  {id:504, home_team:"BYU", away_team:"Utah Tech", kickoffUTC:"2026-09-06T00:00:00Z", network:"ESPN+", venue:"Provo, UT"},
+  {id:505, home_team:"Georgia Tech", away_team:"Colorado", kickoffUTC:"2026-09-06T00:00:00Z", network:"ESPN", venue:"Atlanta, GA (Bobby Dodd Stadium)"},
+  {id:506, home_team:"Utah", away_team:"Idaho", kickoffUTC:"2026-09-04T01:00:00Z", network:"ESPNU", venue:"Salt Lake City, UT (Rice-Eccles Stadium)"}, // corrected from Utah State — real opponent is Idaho, Thu 9/3 9pm ET
+  {id:533, home_team:"UCF", away_team:"Bethune-Cookman", kickoffUTC:"2026-09-03T23:00:00Z", network:"ESPN+", venue:"Orlando, FL (Acrisure Bounce House)"}, // UCF was missing entirely — real Week 1 opener
+  {id:507, home_team:"Ohio State", away_team:"Ball State", kickoffUTC:"2026-09-05T16:30:00Z", network:"Big Ten Network", venue:"Columbus, OH"},
+  {id:508, home_team:"Indiana", away_team:"North Texas", kickoffUTC:"2026-09-05T16:00:00Z", network:"FOX", venue:"Bloomington, IN"},
+  {id:509, home_team:"Penn State", away_team:"Marshall", kickoffUTC:"2026-09-05T19:30:00Z", network:"FS1", venue:"University Park, PA"},
+  {id:510, home_team:"Michigan", away_team:"Western Michigan", kickoffUTC:"2026-09-05T23:30:00Z", network:"NBC", venue:"Ann Arbor, MI"},
+  {id:511, home_team:"LSU", away_team:"Clemson", kickoffUTC:"2026-09-05T23:30:00Z", network:"ABC", venue:"Baton Rouge, LA (Tiger Stadium)"},
+  {id:512, home_team:"Alabama", away_team:"East Carolina", kickoffUTC:"2026-09-05T16:00:00Z", network:"ABC", venue:"Tuscaloosa, AL"},
+  {id:513, home_team:"Georgia", away_team:"Tennessee State", kickoffUTC:"2026-09-05T19:00:00Z", network:"SEC Network+", venue:"Athens, GA"},
+  {id:514, home_team:"Oregon", away_team:"Boise State", kickoffUTC:"2026-09-05T19:30:00Z", network:"CBS", venue:"Eugene, OR"},
+  {id:515, home_team:"Texas", away_team:"Texas State", kickoffUTC:"2026-09-05T19:30:00Z", network:"ESPN", venue:"Austin, TX"},
+  {id:516, home_team:"Duke", away_team:"Tulane", kickoffUTC:"2026-09-05T19:30:00Z", network:"ACC Network", venue:"Durham, NC"},
+  {id:517, home_team:"Tulsa", away_team:"Oklahoma State", kickoffUTC:"2026-09-05T19:45:00Z", network:"ESPNU", venue:"Tulsa, OK"},
+  {id:518, home_team:"USF", away_team:"FIU", kickoffUTC:"2026-09-05T23:00:00Z", network:"ESPN+", venue:"Tampa, FL"},
+  {id:519, home_team:"Florida", away_team:"Florida Atlantic", kickoffUTC:"2026-09-05T23:45:00Z", network:"SEC Network", venue:"Gainesville, FL"},
+  {id:520, home_team:"California", away_team:"UCLA", kickoffUTC:"2026-09-06T02:30:00Z", network:"ESPN", venue:"Berkeley, CA"},
+  {id:521, home_team:"Houston", away_team:"Oregon State", kickoffUTC:"2026-09-05T16:00:00Z", network:"ESPN", venue:"Houston, TX"},
+  {id:522, home_team:"West Virginia", away_team:"Coastal Carolina", kickoffUTC:"2026-09-05T16:00:00Z", network:"TNT", venue:"Morgantown, WV"},
+  {id:523, home_team:"Syracuse", away_team:"New Hampshire", kickoffUTC:"2026-09-05T16:00:00Z", network:"ACC Network", venue:"Syracuse, NY"},
+  {id:524, home_team:"Nebraska", away_team:"Ohio", kickoffUTC:"2026-09-05T16:00:00Z", network:"FS1", venue:"Lincoln, NE"},
+  {id:525, home_team:"Pittsburgh", away_team:"Miami (OH)", kickoffUTC:"2026-09-05T16:30:00Z", network:"ESPN", venue:"Pittsburgh, PA"},
+  {id:526, home_team:"South Carolina", away_team:"Kent State", kickoffUTC:"2026-09-05T16:45:00Z", network:"SEC Network", venue:"Columbia, SC"},
+  {id:527, home_team:"Kentucky", away_team:"Youngstown State", kickoffUTC:"2026-09-05T17:00:00Z", network:"SEC Network+", venue:"Lexington, KY"},
+  {id:528, home_team:"Iowa State", away_team:"SE Missouri State", kickoffUTC:"2026-09-05T17:00:00Z", network:"ESPN+", venue:"Ames, IA"},
+  {id:529, home_team:"Temple", away_team:"Rhode Island", kickoffUTC:"2026-09-05T18:00:00Z", network:"ESPN+", venue:"Philadelphia, PA"},
+  {id:530, home_team:"Tennessee", away_team:"Furman", kickoffUTC:"2026-09-05T19:30:00Z", network:"SEC Network+", venue:"Knoxville, TN"},
+  {id:531, home_team:"Wake Forest", away_team:"Akron", kickoffUTC:"2026-09-05T23:00:00Z", network:"ESPN", venue:"Winston-Salem, NC"},
+  {id:532, home_team:"Auburn", away_team:"Baylor", kickoffUTC:"2026-09-05T19:30:00Z", network:"ABC", venue:"Atlanta, GA (Mercedes-Benz Stadium — neutral site)"}
+];
+
+// Campus-location timezone per team (IANA). Falls back to Eastern for
+// any team not explicitly listed, which is correct for most of the
+// ACC/Big Ten East/SEC East/American/Sun Belt anyway.
+const TEAM_TIMEZONE = {
+  // Pacific
+  "California":"America/Los_Angeles","Stanford":"America/Los_Angeles","Oregon":"America/Los_Angeles",
+  "Oregon State":"America/Los_Angeles","UCLA":"America/Los_Angeles","USC":"America/Los_Angeles",
+  "Washington":"America/Los_Angeles","Washington State":"America/Los_Angeles","San Jose State":"America/Los_Angeles",
+  "San Diego State":"America/Los_Angeles","Fresno State":"America/Los_Angeles","Nevada":"America/Los_Angeles",
+  "UNLV":"America/Los_Angeles","Sacramento State":"America/Los_Angeles",
+  // Mountain
+  "BYU":"America/Denver","Colorado":"America/Denver","Utah":"America/Denver","Utah State":"America/Denver",
+  "Air Force":"America/Denver","Wyoming":"America/Denver","New Mexico":"America/Denver","New Mexico State":"America/Denver",
+  "Boise State":"America/Denver","Colorado State":"America/Denver","UTEP":"America/Denver",
+  // Arizona (no DST)
+  "Arizona":"America/Phoenix","Arizona State":"America/Phoenix",
+  // Hawaii (no DST)
+  "Hawaii":"Pacific/Honolulu",
+  // Central
+  "Baylor":"America/Chicago","Houston":"America/Chicago","Iowa State":"America/Chicago","Kansas":"America/Chicago",
+  "Kansas State":"America/Chicago","Oklahoma State":"America/Chicago","TCU":"America/Chicago","Texas Tech":"America/Chicago",
+  "Texas":"America/Chicago","Texas A&M":"America/Chicago","Oklahoma":"America/Chicago","Alabama":"America/Chicago",
+  "Arkansas":"America/Chicago","Auburn":"America/Chicago","LSU":"America/Chicago","Mississippi State":"America/Chicago",
+  "Missouri":"America/Chicago","Ole Miss":"America/Chicago","Vanderbilt":"America/Chicago","Illinois":"America/Chicago",
+  "Iowa":"America/Chicago","Minnesota":"America/Chicago","Nebraska":"America/Chicago","Northwestern":"America/Chicago",
+  "Wisconsin":"America/Chicago","SMU":"America/Chicago","Memphis":"America/Chicago","North Texas":"America/Chicago",
+  "Rice":"America/Chicago","Tulane":"America/Chicago","Tulsa":"America/Chicago","UAB":"America/Chicago","UTSA":"America/Chicago",
+  "Jacksonville State":"America/Chicago","Middle Tennessee":"America/Chicago","Missouri State":"America/Chicago",
+  "Sam Houston":"America/Chicago","Western Kentucky":"America/Chicago","Northern Illinois":"America/Chicago",
+  "North Dakota State":"America/Chicago","Texas State":"America/Chicago","Arkansas State":"America/Chicago",
+  "Louisiana":"America/Chicago","Louisiana-Monroe":"America/Chicago","Louisiana Tech":"America/Chicago",
+  "South Alabama":"America/Chicago","Southern Miss":"America/Chicago","Troy":"America/Chicago"
+};
+function teamTz(team){ return TEAM_TIMEZONE[team] || "America/New_York"; }
+
+function formatInTz(kickoffUTC, tz){
+  if (!kickoffUTC) return null;
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    weekday:'short', hour:'numeric', minute:'2-digit', timeZoneName:'short', timeZone: tz
+  });
+  return fmt.format(new Date(kickoffUTC));
+}
+
+// Shows the game in the selected team's own local time, plus the ET
+// equivalent alongside it (the sport's de facto reference time) so
+// nobody has to convert in their head — unless the team IS in
+// Eastern, in which case that would just repeat the same time twice.
+function formatKickoff(kickoffUTC, team){
+  if (!kickoffUTC) return "Time TBA";
+  const local = formatInTz(kickoffUTC, teamTz(team));
+  if (teamTz(team) === "America/New_York") return local;
+  const etFmt = new Intl.DateTimeFormat('en-US', {
+    hour:'numeric', minute:'2-digit', timeZoneName:'short', timeZone:"America/New_York"
+  });
+  const et = etFmt.format(new Date(kickoffUTC));
+  return `${local} (${et})`;
+}
+
+// Real consensus spreads where reported this week; games without a
+// sourced line are simply left out (no invented odds).
+// Real consensus spreads, sourced per game. Three games remain
+// unsourced on purpose rather than guessed: 506 (Utah's actual Week 1
+// opponent is disputed across sources — one shows Idaho, not Utah
+// State, which is what's currently in GAMES_WEEK_1 — needs manual
+// verification before adding a line), 516 (Duke favored over Tulane,
+// but no exact number found), 524 (Nebraska/Ohio — only a moneyline
+// was available, no point spread).
+const LINES_WEEK_1 = {
+  501:-42.5, 502:-7.5, 503:-40.5, 504:-47.5, 505:-6.5, 506:-35.5, 507:-50.5,
+  508:-40.5, 509:-24.5, 510:-27.5, 511:-10.5, 512:-28.5, 513:-47.5,
+  514:-24.5, 515:-29.5, 517:13.5, 518:-13.5, 519:-27.5, 520:-1.5,
+  521:-20.5, 522:-21.5, 523:-31.5, 525:-16.5, 526:-36.5, 527:-23.5,
+  528:-30.5, 529:-10.5, 530:-46.5, 531:-23.5, 532:-7.5
+};
+
+WEEKLY_GAMES[1] = GAMES_WEEK_1;
+WEEKLY_LINES[1] = LINES_WEEK_1;
+
+let GAMES = WEEKLY_GAMES[WEEK];
+let LINES = WEEKLY_LINES[WEEK];
+
+function switchToWeek(weekNum){
+  WEEK = weekNum;
+  if (weekNum in WEEKLY_GAMES){
+    GAMES = WEEKLY_GAMES[weekNum];
+    LINES = WEEKLY_LINES[weekNum];
+  }
+  spinWeekJersey(WEEK); // keep the header's week number in sync — it used to only ever be set once, at page load
+  render();
+}
+
+// Estimated minutes from KICKOFF to highlights posted — average game
+// length (~3.5 hrs) plus each network's typical posting delay after
+// the final whistle. Used to show an actual clock time rather than
+// a relative estimate, so nobody has to do math to know when to check.
+const HIGHLIGHTS_DELAY_MIN = {
+  "ESPN+": 210 + 45,
+  "ESPN": 210 + 90,
+  "ESPN2": 210 + 90,
+  "ABC": 210 + 90,
+  "FOX": 210 + 150,
+  "FS1": 210 + 150,
+  "CBS": 210 + 150,
+  "NBC": 210 + 180,
+  "TNT": 210 + 150,
+  "Big Ten Network": 210 + 150
+};
+function estimatedPostUTC(kickoffUTC, network){
+  if (!kickoffUTC) return null;
+  const delay = HIGHLIGHTS_DELAY_MIN[network] || (210 + 150);
+  return new Date(new Date(kickoffUTC).getTime() + delay * 60000).toISOString();
+}
+// Just the team's own home-timezone clock time — no "estimate"
+// framing, no second timezone alongside it. One plain time.
+function formatPostTime(kickoffUTC, network, team){
+  const postUTC = estimatedPostUTC(kickoffUTC, network);
+  if (!postUTC) return "Time TBA";
+  return formatInTz(postUTC, teamTz(team));
+}
+
+// Builds a spoiler-safe YouTube search: searches for the extended-cut
+// highlights by team names + season only — never includes a score,
+// a result word ("beats", "upsets"), or a final margin, so the
+// query itself can't leak the outcome the way a news search would.
+function watchLink(home, away){
+  const q = encodeURIComponent(`${away} vs ${home} extended highlights ${YEAR}`);
+  return `https://www.youtube.com/results?search_query=${q}`;
+}
+
+// Full 2026 FBS membership (138 teams, 10 conferences + 2 independents)
+const CONFERENCES = {
+  "ACC": ["Boston College","California","Clemson","Duke","Florida State","Georgia Tech","Louisville","Miami (FL)","North Carolina","NC State","Pittsburgh","SMU","Stanford","Syracuse","Virginia","Virginia Tech","Wake Forest"],
+  "American": ["Army","Charlotte","East Carolina","Florida Atlantic","Memphis","Navy","North Texas","Rice","Temple","Tulane","Tulsa","UAB","USF","UTSA"],
+  "Big 12": ["Arizona","Arizona State","Baylor","BYU","Cincinnati","Colorado","Houston","Iowa State","Kansas","Kansas State","Oklahoma State","TCU","Texas Tech","UCF","Utah","West Virginia"],
+  "Big Ten": ["Illinois","Indiana","Iowa","Maryland","Michigan","Michigan State","Minnesota","Nebraska","Northwestern","Ohio State","Oregon","Penn State","Purdue","Rutgers","UCLA","USC","Washington","Wisconsin"],
+  "Conference USA": ["Delaware","FIU","Jacksonville State","Kennesaw State","Liberty","Middle Tennessee","Missouri State","New Mexico State","Sam Houston","Western Kentucky"],
+  "MAC": ["Akron","Ball State","Bowling Green","Buffalo","Central Michigan","Eastern Michigan","Kent State","Miami (OH)","Ohio","Sacramento State","Toledo","UMass","Western Michigan"],
+  "Mountain West": ["Air Force","Hawaii","Nevada","New Mexico","San Jose State","UNLV","Wyoming","UTEP","Northern Illinois","North Dakota State"],
+  "Pac-12": ["Boise State","Colorado State","Fresno State","Oregon State","San Diego State","Texas State","Utah State","Washington State"],
+  "SEC": ["Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Mississippi State","Missouri","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt"],
+  "Sun Belt": ["Appalachian State","Arkansas State","Coastal Carolina","Georgia Southern","Georgia State","James Madison","Louisiana","Louisiana-Monroe","Louisiana Tech","Marshall","Old Dominion","South Alabama","Southern Miss","Troy"],
+  "FBS Independents": ["Notre Dame","UConn"]
+};
+const CONFERENCE_NAMES = Object.keys(CONFERENCES);
+
+// Official (or closest publicly documented) brand colors per school.
+// Two colors each; the theming engine below picks the darker as the
+// page background and the brighter/more saturated as the accent, so
+// e.g. Alabama's dark crimson and Utah's brighter red stay visibly
+// different rather than collapsing into "generic red."
+const TEAM_COLORS = {
+  "Boston College":["#8C2232","#BA9B37"], "California":["#003262","#FDB515"], "Clemson":["#F56600","#522D80"],
+  "Duke":["#00539B","#012169"], "Florida State":["#782F40","#CEB888"], "Georgia Tech":["#003057","#B3A369"],
+  "Louisville":["#AD0000","#000000"], "Miami (FL)":["#005030","#F47321"], "North Carolina":["#13294B","#7BAFD4"],
+  "NC State":["#CC0000","#000000"], "Pittsburgh":["#003594","#FFB81C"], "SMU":["#354CA1","#C8102E"],
+  "Stanford":["#8C1515","#FFFFFF"], "Syracuse":["#D44500","#000E54"], "Virginia":["#232D4B","#E57200"],
+  "Virginia Tech":["#630031","#CE5C17"], "Wake Forest":["#000000","#9E7E38"],
+  "Illinois":["#13294B","#E84A27"], "Indiana":["#990000","#EEEDEB"], "Iowa":["#000000","#FFCD00"],
+  "Maryland":["#E21833","#000000"], "Michigan":["#00274C","#FFCB05"], "Michigan State":["#18453B","#FFFFFF"],
+  "Minnesota":["#7A0019","#FFCC33"], "Nebraska":["#E41C38","#F5F1E7"], "Northwestern":["#4E2A84","#FFFFFF"],
+  "Ohio State":["#BB0000","#666666"], "Oregon":["#154733","#FEE123"], "Penn State":["#041E42","#FFFFFF"],
+  "Purdue":["#000000","#CEB888"], "Rutgers":["#CC0033","#000000"], "UCLA":["#2D68C4","#F2A900"],
+  "USC":["#990000","#FFC72C"], "Washington":["#4B2E83","#E8E3D3"], "Wisconsin":["#C5050C","#FFFFFF"],
+  "Arizona":["#AB0520","#0C234B"], "Arizona State":["#8C1D40","#FFC627"], "Baylor":["#154734","#FFB81C"],
+  "BYU":["#002E5D","#FFFFFF"], "Cincinnati":["#E00122","#000000"], "Colorado":["#000000","#CFB87C"],
+  "Houston":["#C8102E","#FFFFFF"], "Iowa State":["#C8102E","#F1BE48"], "Kansas":["#0051BA","#E8000D"],
+  "Kansas State":["#512888","#FFFFFF"], "Oklahoma State":["#FF7300","#000000"], "TCU":["#4D1979","#FFFFFF"],
+  "Texas Tech":["#CC0000","#000000"], "UCF":["#000000","#BA9B37"], "Utah":["#CC0000","#FFFFFF"],
+  "West Virginia":["#002855","#EAAA00"],
+  "Alabama":["#9E1B32","#828A8F"], "Arkansas":["#9D2235","#000000"], "Auburn":["#03244D","#DD550C"],
+  "Florida":["#0021A5","#FA4616"], "Georgia":["#BA0C2F","#000000"], "Kentucky":["#0033A0","#FFFFFF"],
+  "LSU":["#461D7C","#FDD023"], "Mississippi State":["#660000","#FFFFFF"], "Missouri":["#000000","#F1B82D"],
+  "Oklahoma":["#841617","#FFFFFF"], "Ole Miss":["#14213D","#CE1126"], "South Carolina":["#73000A","#000000"],
+  "Tennessee":["#FF8200","#FFFFFF"], "Texas":["#BF5700","#FFFFFF"], "Texas A&M":["#500000","#FFFFFF"],
+  "Vanderbilt":["#000000","#866D4B"],
+  "Army":["#000000","#D4BF91"], "Charlotte":["#046A38","#000000"], "East Carolina":["#592A8A","#FDC82F"],
+  "Florida Atlantic":["#003366","#CC0000"], "Memphis":["#003087","#898D8D"], "Navy":["#00205B","#B29D6C"],
+  "North Texas":["#00853E","#000000"], "Rice":["#00205B","#8996A0"], "Temple":["#9D2235","#000000"],
+  "Tulane":["#006747","#274A8C"], "Tulsa":["#002D72","#B3A369"], "UAB":["#1E6B52","#FFC845"],
+  "USF":["#006747","#CFC493"], "UTSA":["#0C2340","#F15A22"],
+  "Delaware":["#00539F","#FFD200"], "FIU":["#081E3F","#B6862C"], "Jacksonville State":["#A6192E","#000000"],
+  "Kennesaw State":["#000000","#FFC629"], "Liberty":["#002D62","#C8102E"], "Middle Tennessee":["#0066CC","#000000"],
+  "Missouri State":["#663300","#FFFFFF"], "New Mexico State":["#8C1D40","#FFFFFF"], "Sam Houston":["#F2A900","#000000"],
+  "Western Kentucky":["#C8102E","#000000"],
+  "Akron":["#041E42","#A89968"], "Ball State":["#BA0C2F","#000000"], "Bowling Green":["#4F2C1D","#FE5000"],
+  "Buffalo":["#005BBB","#FFFFFF"], "Central Michigan":["#6A0032","#FFC82E"], "Eastern Michigan":["#046A38","#000000"],
+  "Kent State":["#002664","#EAAB00"], "Miami (OH)":["#C41230","#000000"], "Ohio":["#00694E","#FFFFFF"],
+  "Sacramento State":["#00563F","#C4B581"], "Toledo":["#00214E","#FFC72C"], "UMass":["#881C1C","#000000"],
+  "Western Michigan":["#532E1F","#FFD046"],
+  "Air Force":["#003087","#8A8D8F"], "Hawaii":["#024731","#FFFFFF"], "Nevada":["#003366","#C0C0C0"],
+  "New Mexico":["#BA0C2F","#A7A8AA"], "San Jose State":["#0055A2","#FFB81C"], "UNLV":["#CF0A2C","#666666"],
+  "Wyoming":["#4B2E1E","#FFC425"], "UTEP":["#FF8200","#041E42"], "Northern Illinois":["#C8102E","#000000"],
+  "North Dakota State":["#FFC72C","#007A33"],
+  "Boise State":["#0033A0","#D64309"], "Colorado State":["#1E4D2B","#C8C372"], "Fresno State":["#DB0032","#002F6C"],
+  "Oregon State":["#DC4405","#000000"], "San Diego State":["#A6192E","#000000"], "Texas State":["#501214","#8A8D8F"],
+  "Utah State":["#0F2439","#FFFFFF"], "Washington State":["#A60F2D","#5E6A71"],
+  "Appalachian State":["#000000","#FFC72C"], "Arkansas State":["#CC092F","#000000"], "Coastal Carolina":["#006B54","#B0975A"],
+  "Georgia Southern":["#041E42","#4098D7"], "Georgia State":["#0039A6","#C41230"], "James Madison":["#450084","#CBB677"],
+  "Louisiana":["#CE181E","#000000"], "Louisiana-Monroe":["#660000","#B7A369"], "Louisiana Tech":["#002F87","#C8102E"],
+  "Marshall":["#00B140","#000000"], "Old Dominion":["#003087","#8A8D8F"], "South Alabama":["#00205B","#C41230"],
+  "Southern Miss":["#000000","#FFB81C"], "Troy":["#862633","#8A8D8F"],
+  "Notre Dame":["#0C2340","#C99700"], "UConn":["#000E2F","#FFFFFF"]
+};
+
+function hexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function relLuminance(hex){
+  const [r,g,b] = hexToRgb(hex).map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  });
+  return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+function mix(hex, towardHex, amount){
+  const a = hexToRgb(hex), b = hexToRgb(towardHex);
+  const m = a.map((v,i) => Math.round(v + (b[i]-v)*amount));
+  return '#' + m.map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+// Original team-color initial badges — NOT official school logos/crests.
+// Those are trademarked and licensed separately; this is just a colored
+// circle with the team's initials, generated from data we already have.
+const TEAM_ABBR_OVERRIDES = {
+  "Ole Miss":"OM", "Miami (FL)":"MIA", "Miami (OH)":"M-OH", "Texas A&M":"TAMU",
+  "Texas Tech":"TTU", "Kansas State":"KSU", "Oklahoma State":"OKST", "Ohio State":"OSU",
+  "Penn State":"PSU", "Michigan State":"MSU", "Mississippi State":"MSST",
+  "Arizona State":"ASU", "Boise State":"BSU", "Colorado State":"CSU", "Fresno State":"FSU2",
+  "San Diego State":"SDSU", "San Jose State":"SJSU", "Georgia State":"GSU",
+  "Georgia Southern":"GASO", "Georgia Tech":"GT", "Virginia Tech":"VT", "Louisiana Tech":"LATECH",
+  "North Carolina":"UNC", "NC State":"NCST", "South Carolina":"SCAR", "North Texas":"UNT",
+  "West Virginia":"WVU", "New Mexico State":"NMSU", "New Mexico":"UNM", "North Dakota State":"NDSU",
+  "Western Michigan":"WMU", "Eastern Michigan":"EMU", "Central Michigan":"CMU",
+  "Western Kentucky":"WKU", "Middle Tennessee":"MTSU", "Coastal Carolina":"CCU",
+  "Appalachian State":"APP", "Old Dominion":"ODU", "James Madison":"JMU",
+  "Florida Atlantic":"FAU", "Florida State":"FSU", "Wake Forest":"WAKE",
+  "Boston College":"BC", "Notre Dame":"ND", "Texas State":"TXST", "Utah State":"USU",
+  "Louisiana-Monroe":"ULM", "Southern Miss":"USM", "South Alabama":"USA", "Sacramento State":"SAC"
+};
+function teamInitials(team){
+  if (TEAM_ABBR_OVERRIDES[team]) return TEAM_ABBR_OVERRIDES[team];
+  const words = team.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(w => w && w.toUpperCase() !== '&');
+  if (words.length === 1) return words[0].slice(0, 4).toUpperCase();
+  return words.map(w => w[0]).join('').toUpperCase().slice(0, 4);
+}
+function badgeColors(team){
+  const colors = TEAM_COLORS[team];
+  if (!colors) return {bg:'#555555', fg:'#ffffff'};
+  const [c1, c2] = colors;
+  const bg = relLuminance(c1) > relLuminance(c2) ? c1 : c2; // brighter of the two, for pop
+  const fg = relLuminance(bg) > 0.4 ? '#111111' : '#ffffff';
+  return {bg, fg};
+}
+function teamBadge(team){
+  const {bg, fg} = badgeColors(team);
+  return `<span class="team-badge" style="background:${bg};color:${fg}">${teamInitials(team)}</span>`;
+}
+
+function applyTeamTheme(team){
+  const colors = TEAM_COLORS[team];
+  const root = document.documentElement.style;
+  if (!colors){
+    root.removeProperty('--field'); root.removeProperty('--field-line');
+    root.removeProperty('--amber'); root.removeProperty('--amber-dim');
+    root.removeProperty('--panel'); root.removeProperty('--panel-line');
+    return;
+  }
+  let [c1, c2] = colors;
+  // If a color is near-white/near-black it can't anchor a readable
+  // dark background or read as a visible accent — fall back sensibly.
+  const lum1 = relLuminance(c1), lum2 = relLuminance(c2);
+  let bg, accent;
+  if (lum1 > 0.75 && lum2 > 0.75){ bg = "#1A1A1A"; accent = c1; }
+  else if (lum1 < 0.06 && lum2 < 0.06){ bg = c1; accent = "#D6202E"; }
+  else { [bg, accent] = lum1 <= lum2 ? [c1, c2] : [c2, c1]; }
+
+  root.setProperty('--field', bg);
+  root.setProperty('--field-line', mix(bg, '#FFFFFF', 0.14));
+  root.setProperty('--panel', mix(bg, '#FFFFFF', 0.08));
+  root.setProperty('--panel-line', mix(bg, '#FFFFFF', 0.22));
+  root.setProperty('--amber', accent);
+  root.setProperty('--amber-dim', mix(accent, '#000000', 0.35));
+}
+
+// Season-to-date results (for the Resume Connection / Head-to-Head
+// tiers). Mostly empty since real Week 1 hasn't kicked off yet — but
+// a handful of Week 0 games (Aug 28-29) already happened, so any
+// selectable team that played one has a real resume entry here.
+const TEAM_GAMES = {
+  "TCU": [{opp:"North Carolina", result:"lost_to", teamScore:10, oppScore:15}],
+  "North Carolina": [{opp:"TCU", result:"beat", teamScore:15, oppScore:10}]
+  // Other Week 0 games happened too (Hawaii/Stanford, NC State, Memphis,
+  // San Jose State, New Mexico State, Jacksonville State, Sacramento
+  // State among selectable teams) — add their results here once sourced.
+};
+
+const TEAMS = CONFERENCE_NAMES.flatMap(c => CONFERENCES[c]).sort();
+
+/* ============================================================
+   SCORING ENGINE
+   Direct JS port of the RootForGuide Game Gravity
+   algorithm (same logic as cheer_impact.py).
+   ============================================================ */
+
+function spreadToWinProb(spread){
+  if (spread === undefined || spread === null) return null;
+  const k = 14.0;
+  const margin = Math.abs(spread);
+  const prob = 1 / (1 + Math.exp(-margin / (k/4)));
+  return Math.min(prob, 0.99);
+}
+
+function rankOf(team){
+  const e = RANKINGS.find(r => r.school.toLowerCase() === team.toLowerCase());
+  return e ? e.rank : null;
+}
+
+function buildResume(team){
+  const map = {};
+  (TEAM_GAMES[team] || []).forEach(g => { map[g.opp] = g.result; });
+  return map;
+}
+
+// A regular season runs roughly 14 weeks before championship weekend.
+// The same underlying situation (e.g. a rival one spot ahead of you)
+// carries more weight later in the season, because there's less time
+// left for anything else to change it. This multiplier makes scores
+// comparable ACROSS weeks, not just within one week: a 70 in Week 10
+// reflects more real stakes than a 70 in Week 3 would have.
+const TOTAL_SEASON_WEEKS = 14;
+function seasonMultiplier(week){
+  const progress = Math.min(Math.max(week - 1, 0), TOTAL_SEASON_WEEKS - 1) / (TOTAL_SEASON_WEEKS - 1);
+  return 1 + progress * 0.6; // 1.0x in Week 1 → 1.6x by Week 14
+}
+
+// A 100 should be rare enough that people notice it — reserved for
+// true win-and-in / lose-and-out stakes: your team sitting right on
+// the cutoff line late enough in the season that there's no more
+// time to recover from a loss or clinch some other way. Every other
+// week, your own game still tops the list, just not at a manufactured 100.
+function isEliminationGame(userRank, week){
+  if (userRank === null) return false;
+  // Narrowed on purpose: this used to fire for ANY game across a
+  // 3-week window (12-14) just because the rank happened to be near
+  // the cutoff -- which incorrectly flagged ordinary games (like a
+  // regular-season game against a non-championship opponent) as
+  // "win and you're in." Now only the truly final stretch of the
+  // season qualifies, not just "late enough."
+  if (week < TOTAL_SEASON_WEEKS - 1) return false;
+  const cutoff = 12; // the last playoff spot
+  return Math.abs(userRank - cutoff) <= 1;
+}
+
+// How much real, played-game evidence backs up a claim about a given
+// team's position — used to scale Committee-lens scores so they lean
+// more heavily on actual results as the season fills in, and less on
+// preseason-poll guesswork early on. This used to run through the
+// full Colley matrix (a real linear-algebra rating solve), but the
+// rating itself was only ever displayed in "Scoreboard Only" mode,
+// which has been removed as distracting and not reliably accurate
+// this early in a season with so few connected games. All that
+// confidence scaling ever actually needed was a simple games-played
+// count, so that's all this does now — same behavior, far simpler.
+function gamesPlayedCount(team){
+  let count = 0;
+  Object.keys(TEAM_GAMES).forEach(t => {
+    if (t === team) count += TEAM_GAMES[t].length;
+  });
+  return count;
+}
+function networkConfidence(candTeam){
+  return Math.min(1, 0.5 + gamesPlayedCount(candTeam) * 0.1);
+}
+
+function scoreWeek(team){
+  const userRank = rankOf(team);
+  const resume = buildResume(team);
+  const myConference = conferenceOf(team);
+  const rankWindow = 12;
+  const windowLabel = "playoff bubble";
+  const seasonMult = seasonMultiplier(WEEK);
+
+  const results = [];
+
+  GAMES.forEach(g => {
+    const { id, home_team: home, away_team: away, kickoffUTC, network, venue, home_score = null, away_score = null } = g;
+    const link = watchLink(home, away);
+
+    const homeRank = rankOf(home), awayRank = rankOf(away);
+    let favoredTeam = null, winProb = null;
+    const spread = LINES[id];
+    if (spread !== undefined){
+      favoredTeam = spread < 0 ? home : (spread > 0 ? away : null);
+      winProb = spreadToWinProb(spread);
+    }
+
+    if (team.toLowerCase() === home.toLowerCase() || team.toLowerCase() === away.toLowerCase()){
+      const elimination = isEliminationGame(userRank, WEEK);
+      const opponent = team.toLowerCase() === home.toLowerCase() ? away : home;
+      const oppRank = team.toLowerCase() === home.toLowerCase() ? awayRank : homeRank;
+
+      let score, reason;
+      if (elimination){
+        score = 100.0;
+        reason = `${team} is sitting right on the ${windowLabel} cutoff (#${userRank}) this late in the season — win and you're in, lose and it's basically over. Doesn't get bigger than this.`;
+      } else {
+        // Real stakes, not a flat number: how dangerous a loss actually is
+        // here depends on more than the spread — a program with an
+        // otherwise elite résumé can occasionally absorb a bad loss (Notre
+        // Dame lost 16-14 to Northern Illinois as 28.5-point favorites in
+        // 2024 and still played for the national title), but that's the
+        // exception, not the rule. For most teams, a loss to a weak,
+        // unranked opponent is a real and lasting blow to the resume, not
+        // something to wave off. A ranked opponent, a close spread, or a
+        // late-season date all add further, genuine risk on top of that.
+        const rankedBonus = oppRank !== null ? 15 : 0;
+        let closenessBonus = 8; // default when there's no line data to judge by
+        if (winProb !== null){
+          closenessBonus = (1 - Math.abs(winProb - 0.5) * 2) * 15; // 0 (blowout) to 15 (toss-up)
+        }
+        const latenessBonus = Math.round((seasonMult - 1) * 20); // 0 in Week 1, up to ~12 by Week 14
+        score = Math.min(99, Math.round(60 + rankedBonus + closenessBonus + latenessBonus));
+
+        const riskNote = oppRank !== null
+          ? `${opponent} is ranked (#${oppRank}) — a loss here would genuinely hurt.`
+          : (winProb !== null && Math.abs(winProb - 0.5) < 0.15
+              ? `The spread is close — real upset risk even against an unranked team.`
+              : `${opponent} is unranked and ${team} is heavily favored — but an upset loss here would be a real, lasting blow to the playoff resume, one most teams can't just shake off.`);
+        reason = `${team} is playing. ${riskNote}`;
+      }
+
+      results.push({
+        game_id:id, home, away, tier:"Your Team", rootFor:team,
+        reason, score, elimination,
+        favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score
+      });
+      return;
+    }
+
+    let best = null;
+
+    // Tier 1: Ranking battle — anchored to a realistic BUBBLE ZONE
+    // around the actual cutoff (rank 12), not a window around your own
+    // rank. This is the key fix: your own rank being close to 12
+    // doesn't mean every team between you and #1 is a relevant threat.
+    // A team ranked #1-6 is realistically locked in even after one
+    // loss — rooting against them wastes rooting interest on something
+    // that doesn't open a real spot. What actually helps is teams IN
+    // the bubble zone losing — and because "root against a bubble team"
+    // means "root for whoever they're playing," rooting for an elite,
+    // safely-in team to beat a bubble team falls out automatically
+    // here, with no separate rule needed: BYU wanting Ohio State to
+    // beat Penn State late last season is just this logic applied.
+    //
+    // HONEST LIMITATION on "12": the real 2026 CFP field isn't a flat
+    // top-12 ranking cutoff. It's 5 automatic qualifiers (the ACC, Big
+    // 12, Big Ten, and SEC champions regardless of ranking, plus the
+    // single highest-ranked Group of Six team) + Notre Dame if they
+    // finish top-12 + 7 remaining at-large spots by ranking. A Power 4
+    // team can be functionally "safe" by winning their conference even
+    // at a mediocre overall rank — which this rank-only model can't
+    // see, because it would require live conference-standings data
+    // (who's actually on track to win their conference) that isn't in
+    // this dataset yet. Rank 12 is used here as the best available
+    // proxy for "the at-large cutoff," not a claim that it's exactly
+    // right — worth revisiting once conference standings are wired in
+    // through the live API.
+    const CUTOFF = 12;
+    const BUBBLE_RADIUS = 6; // one loss typically costs a handful of spots, not more
+    const SAFE_ZONE_MAX_RANK = CUTOFF - BUBBLE_RADIUS; // ranks 1-6 — comfortably in, even after one loss
+    function inBubbleZone(rank){
+      return rank !== null && rank >= CUTOFF - BUBBLE_RADIUS && rank <= CUTOFF + BUBBLE_RADIUS;
+    }
+
+    if (userRank !== null){
+      [[home, homeRank],[away, awayRank]].forEach(([cand, candRank]) => {
+        if (candRank === null || candRank === userRank) return;
+        if (!inBubbleZone(candRank)) return; // not a realistic threat to the cutoff — skip
+        const opponent = cand === home ? away : home;
+        const rootFor = opponent;
+        // Score magnitude still scales by how close this candidate is
+        // to YOUR specific rank — a real bubble threat right next to
+        // you matters more than one further down the bubble zone.
+        const distance = Math.abs(candRank - userRank);
+        const proximityWeight = Math.max(0, 1 - (distance / (rankWindow + 1)));
+        const maxSpotShift = 8;
+        const estimatedSpots = Math.max(1, Math.round(proximityWeight * maxSpotShift));
+        const confidence = networkConfidence(cand);
+        const base = 40 + estimatedSpots * 6;
+        const score = Math.min(98, Math.round(base * confidence * seasonMult * 10) / 10);
+        const confidenceNote = `${Math.round(confidence * 100)}% network confidence`;
+        let reason;
+        if (candRank < userRank){
+          reason = `${cand} is ranked #${candRank}, in the real bubble zone ahead of ${team} (#${userRank}). A loss here is worth an estimated ${estimatedSpots} spot${estimatedSpots === 1 ? '' : 's'} toward the ${windowLabel} cutoff (${confidenceNote}).`;
+        } else {
+          reason = `${cand} is ranked #${candRank}, a live bubble threat closing in on ${team} (#${userRank}). A loss here is worth an estimated ${estimatedSpots} spot${estimatedSpots === 1 ? '' : 's'} of cushion (${confidenceNote}).`;
+        }
+        if (!best || score > best.score){
+          best = { game_id:id, home, away, tier:"Ranking Battle", rootFor, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
+        }
+      });
+    }
+
+    // Tier: Resume Protection — for teams comfortably in the SAFE
+    // ZONE, the real question flips. It's not "how do I climb," it's
+    // "if I stumbled this week, who would most want to jump me — and
+    // is losing right now, protecting my spot before that even
+    // becomes a live question." Only fires for teams ranked in the
+    // safe zone; bubble-zone teams already get this from Tier 1 above.
+    if (userRank !== null && userRank <= SAFE_ZONE_MAX_RANK){
+      const protectionRadius = 6; // how far below you someone could plausibly leapfrog in one bad week
+      [[home, homeRank], [away, awayRank]].forEach(([cand, candRank]) => {
+        if (candRank === null || candRank <= userRank) return; // only teams BELOW you are leapfrog threats
+        const distanceBelow = candRank - userRank;
+        if (distanceBelow > protectionRadius) return;
+        const opponent = cand === home ? away : home;
+        const confidence = networkConfidence(cand);
+        const proximityWeight = 1 - (distanceBelow / (protectionRadius + 1));
+        const base = 35 + Math.round(proximityWeight * 30);
+        const score = Math.min(90, Math.round(base * confidence * seasonMult * 10) / 10);
+        const reason = `${cand} (#${candRank}) is the team best positioned to leapfrog ${team} (#${userRank}) if ${team} ever slips up. A loss here is resume insurance now, not urgent action (${Math.round(confidence * 100)}% network confidence).`;
+        if (!best || score > best.score){
+          best = { game_id:id, home, away, tier:"Resume Protection", rootFor:opponent, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
+        }
+      });
+    }
+
+    // Tier 2: Resume connection — and Head-to-Head, a stronger version of it.
+    // Per the CFP committee's own published protocol, head-to-head results
+    // are a separate, higher-weighted tiebreaker than generic common-opponent
+    // comparisons. So if a resume opponent is ALSO a current ranking rival
+    // (i.e. you've already played the team you're competing with directly),
+    // that outranks an ordinary Resume Connection.
+    [home, away].forEach(cand => {
+      if (resume[cand]){
+        const outcome = resume[cand];
+        const candRank = rankOf(cand);
+        const isRivalToo = userRank !== null && candRank !== null && Math.abs(candRank - userRank) <= rankWindow;
+        const confidence = networkConfidence(cand);
+        let reason, weight, base, tier;
+        if (isRivalToo){
+          tier = "Head-to-Head";
+          base = 85; // committee treats head-to-head as the stronger tiebreaker
+          if (outcome === "beat"){
+            reason = `${team} already beat ${cand} head-to-head — the CFP committee treats that as a direct tiebreaker in ${team}'s favor. A win for ${cand} this week keeps that head-to-head result relevant (${Math.round(confidence * 100)}% network confidence).`;
+            weight = 0.85;
+          } else {
+            reason = `${cand} beat ${team} head-to-head — that tiebreaker already favors them. A loss for ${cand} this week is your best way to offset it (${Math.round(confidence * 100)}% network confidence).`;
+            weight = 0.75;
+          }
+        } else {
+          tier = "Resume Connection";
+          base = 60;
+          if (outcome === "beat"){
+            reason = `${team} already beat ${cand} — a win for them this week makes that win look better on ${team}'s resume (${Math.round(confidence * 100)}% network confidence).`;
+            weight = 0.7;
+          } else {
+            reason = `${team} lost to ${cand} earlier — a win for them this week makes that loss look like less of a red flag (${Math.round(confidence * 100)}% network confidence).`;
+            weight = 0.55;
+          }
+        }
+        const score = Math.min(98, Math.round(base * weight * confidence * seasonMult * 10) / 10);
+        if (!best || score > best.score){
+          best = { game_id:id, home, away, tier, rootFor:cand, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
+        }
+      }
+    });
+
+    // Tier: Conference Watch — a conference-mate looking good or bad
+    // shapes how the whole conference is perceived nationally, which
+    // is real resume-adjacent signal even between two teams you've
+    // never played. This is what makes an unranked team's list feel
+    // like ITS list, not just a copy of everyone else's.
+    if (myConference){
+      const homeConf = conferenceOf(home);
+      const awayConf = conferenceOf(away);
+      if ((homeConf === myConference || awayConf === myConference) && !(home === team || away === team)){
+        const confMate = homeConf === myConference ? home : away;
+        const opponent = homeConf === myConference ? away : home;
+        const confMateRank = rankOf(confMate);
+        const confidence = networkConfidence(confMate);
+        const base = 48;
+        const score = Math.min(92, Math.round(base * confidence * seasonMult * 10) / 10);
+        const reason = `${confMate} is a fellow ${myConference} team${confMateRank ? ` (#${confMateRank})` : ''} — a win over ${opponent} raises how strong the whole conference looks nationally, which reflects on ${team} too (${Math.round(confidence * 100)}% network confidence).`;
+        if (!best || score > best.score){
+          best = { game_id:id, home, away, tier:"Conference Watch", rootFor:confMate, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
+        }
+      }
+    }
+
+    // Tier 3: National Resume Watch — this is what makes the app work
+    // for the majority of FBS teams, not just ones sitting in a rank
+    // window. A ranked team losing reshuffles who counts as a
+    // legitimate "quality win" nationally — which matters to any team
+    // still building a resume, even with no direct connection to this
+    // specific game. Without this tier, an unranked team with no
+    // played-this-week common opponent would see nothing at all.
+    if (homeRank !== null || awayRank !== null){
+      const featuredRank = Math.min(homeRank ?? 999, awayRank ?? 999);
+      const featuredTeam = (homeRank !== null && homeRank === featuredRank) ? home : away;
+      let underdog;
+      if (homeRank !== null && awayRank !== null){
+        underdog = homeRank > awayRank ? home : away;
+      } else {
+        underdog = homeRank !== null ? away : home;
+      }
+      const confidence = networkConfidence(featuredTeam);
+      const base = featuredRank <= 10 ? 55 : (featuredRank <= 25 ? 42 : 30);
+      const score = Math.min(90, Math.round(base * confidence * seasonMult * 10) / 10);
+      const reason = `${featuredTeam} is ranked #${featuredRank} — an upset here reshuffles who counts as a marquee, resume-building win nationally, even without a direct tie to ${team} (${Math.round(confidence * 100)}% network confidence).`;
+      if (!best || score > best.score){
+        best = { game_id:id, home, away, tier:"National Resume Watch", rootFor:underdog, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
+      }
+    }
+
+    if (best) results.push(best);
+  });
+
+  // MISSION: this is the actual point of the whole site — a priority-
+  // ordered list of which games this week matter most to THIS team's
+  // real movement in the rankings. Game Gravity (the displayed score)
+  // is deliberately left as a pure "how much is riding on this if it
+  // happens" number — untouched here. But ORDER is a different
+  // question: a nominally high-stakes game nobody expects to break
+  // your way (Ohio State curb-stomping an FCS team) has near-zero
+  // practical value to watch, because the favorable outcome basically
+  // isn't going to happen. Sort priority = stakes × how likely the
+  // rooted-for outcome actually is, using the same real betting odds
+  // already computed for each game. Games without sourced odds get a
+  // neutral 0.5 rather than being penalized for a data gap.
+  function rootProbability(r){
+    if (!r.rootFor || !r.favoredTeam || r.winProb === null) return 0.5;
+    return r.rootFor === r.favoredTeam ? r.winProb : (1 - r.winProb);
+  }
+  results.forEach(r => { r.rootProb = rootProbability(r); r.priority = r.score * r.rootProb; });
+
+  // Your own team's game always leads the list — that's a "what do I
+  // watch" priority, separate from the "how much is really at stake"
+  // number now attached to it, which can legitimately be lower.
+  return results.sort((a, b) => {
+    if (a.tier === "Your Team" && b.tier !== "Your Team") return -1;
+    if (b.tier === "Your Team" && a.tier !== "Your Team") return 1;
+    return b.priority - a.priority;
+  });
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+
+const conferenceSelect = document.getElementById('conferenceSelect');
+const teamSelect = document.getElementById('teamSelect');
+const weekSelect = document.getElementById('weekSelect');
+const seasonSelect = document.getElementById('seasonSelect');
+
+// Season picker — 7 years back, matching the request. Only the BYU
+// 2025 pilot has real data; the rest are visible-but-disabled, same
+// pattern as the week picker below.
+let selectedSeason = '2026';
+// LIVE DATA — the Worker (rootforguide-data.hbyf5dp6jh.workers.dev)
+// is confirmed working with a real API key as of this build. Every
+// season CFBD has on file is now genuinely live, not hand-curated —
+// this replaces the old BYU-2025-pilot special case entirely, since
+// real data is strictly better than a manually researched stand-in.
+const WORKER_URL = 'https://rootforguide-data.hbyf5dp6jh.workers.dev';
+let useLiveData = true; // easy kill-switch if the Worker ever needs to be bypassed
+
+const SEASON_OPTIONS = [
+  { value:'2026', label:'2026 (current)', enabled:true },
+  { value:'2025', label:'2025', enabled:true },
+  { value:'2024', label:'2024', enabled:true },
+  { value:'2023', label:'2023', enabled:true },
+  { value:'2022', label:'2022', enabled:true },
+  { value:'2021', label:'2021', enabled:true },
+  { value:'2020', label:'2020', enabled:true },
+  { value:'2019', label:'2019', enabled:true }
+];
+SEASON_OPTIONS.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s.value; opt.textContent = s.label; opt.disabled = !s.enabled;
+  seasonSelect.appendChild(opt);
+});
+seasonSelect.value = selectedSeason;
+seasonSelect.addEventListener('change', () => {
+  selectedSeason = seasonSelect.value;
+  populateWeekSelectForLive();
+  render();
+});
+
+CONFERENCE_NAMES.forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c; opt.textContent = c;
+  conferenceSelect.appendChild(opt);
+});
+
+function populateTeams(conference){
+  teamSelect.innerHTML = '';
+  CONFERENCES[conference].forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = `${rankBadge(t)}${t}`;
+    teamSelect.appendChild(opt);
+  });
+}
+
+// Week picker — built for the whole season, but only weeks with real
+// data loaded are selectable right now. Rest are visible (so the
+// control reads as a real season-long feature) but disabled, and
+// switching among them is wired for whenever more weeks get data.
+const TOTAL_SEASON_WEEKS_FOR_PICKER = 15;
+
+function populateWeekSelectForLive(){
+  weekSelect.innerHTML = '';
+  for (let w = 0; w <= TOTAL_SEASON_WEEKS_FOR_PICKER; w++){
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = w === 0 ? 'Week 0' : `Week ${w}`;
+    weekSelect.appendChild(opt);
+  }
+  weekSelect.value = WEEK;
+}
+
+populateWeekSelectForLive();
+
+// Default to whoever is the "first team out" of a 12-team playoff —
+// i.e. ranked #13, right on the bubble, which is the most useful
+// team to land on for a "Make the Playoff" first-time view. Falls
+// back to BYU/Big 12 if rank 13 isn't in the data for some reason.
+function teamAtRank(rank){
+  const e = RANKINGS.find(r => r.rank === rank);
+  return e ? e.school : null;
+}
+function conferenceOf(team){
+  return CONFERENCE_NAMES.find(c => CONFERENCES[c].includes(team)) || null;
+}
+// Hardcoded directly rather than via teamAtRank(13): that helper reads
+// the static PRESEASON snapshot, which is frozen and can't track real
+// week-to-week poll movement. Texas Tech was preseason #12 but moved
+// to #13 in the real Week 1 AP Poll -- this will need re-updating by
+// hand until the bigger Top 25 table work below exposes the live
+// current poll, at which point the default can pull from that instead.
+const defaultTeam = "Texas Tech";
+const defaultConference = conferenceOf(defaultTeam) || "Big 12";
+conferenceSelect.value = defaultConference;
+populateTeams(defaultConference);
+teamSelect.value = defaultTeam;
+
+conferenceSelect.addEventListener('change', () => {
+  populateTeams(conferenceSelect.value);
+  render();
+});
+teamSelect.addEventListener('change', render);
+weekSelect.addEventListener('change', () => {
+  switchToWeek(parseInt(weekSelect.value, 10));
+});
+
+let showScores = false; // spoiler-safe by default across the whole page
+const spoilerToggle = document.getElementById('spoilerToggle');
+spoilerToggle.addEventListener('change', () => {
+  showScores = spoilerToggle.checked;
+  render();
+});
+
+// "Your Path" (the existing Game Gravity playoff-relevance order,
+// unchanged) vs "What to Watch" (the same games, reordered toward
+// upsets and close finishes -- only meaningful once real scores are
+// in, so it quietly falls back to the normal order pre-game).
+let resultsViewMode = 'path';
+document.getElementById('btnViewPath').addEventListener('click', () => {
+  resultsViewMode = 'path';
+  document.getElementById('btnViewPath').classList.add('active');
+  document.getElementById('btnViewWatch').classList.remove('active');
+  render();
+});
+document.getElementById('btnViewWatch').addEventListener('click', () => {
+  resultsViewMode = 'watch';
+  document.getElementById('btnViewWatch').classList.add('active');
+  document.getElementById('btnViewPath').classList.remove('active');
+  render();
+});
+function watchabilityOrder(results){
+  if (!showScores) return results; // no scores yet -- nothing to reorder toward
+  return results.slice().sort((a, b) => {
+    const scoreOf = (r) => {
+      if (r.home_score === null || r.home_score === undefined || r.away_score === null || r.away_score === undefined) return -1;
+      const margin = Math.abs(r.home_score - r.away_score);
+      let watch = 0;
+      if (margin <= 3) watch += 50;
+      else if (margin <= 8) watch += 30;
+      else if (margin <= 14) watch += 10;
+      const winner = r.home_score > r.away_score ? r.home : r.away;
+      if (r.favoredTeam && winner !== r.favoredTeam && r.winProb >= 0.7) watch += 60;
+      else if (r.favoredTeam && winner !== r.favoredTeam && r.winProb >= 0.55) watch += 25;
+      if (r.homeRank || r.awayRank) watch += 10;
+      return watch;
+    };
+    return scoreOf(b) - scoreOf(a);
+  });
+}
+
+// HARD RULE, not just current behavior — read before "improving" this:
+// this status is computed from ONE flat, fixed duration (3.5 hrs)
+// applied identically to every game, with zero awareness of what's
+// actually happening in any specific one. That uniformity IS the
+// safety property. A blowout and a double-overtime classic flip from
+// "live" to "likely final" at the exact same relative offset, because
+// this function has no idea which one it is — it only knows the
+// public kickoff time.
+//
+// DO NOT replace this with real live/final status once the live data
+// Worker exists. The moment this reflects what's ACTUALLY happening,
+// a game still showing "live" well past the normal window becomes its
+// own spoiler: a fan correctly infers overtime or an unusually close
+// game without ever seeing a score. The upgrade path when live data
+// exists is to use it for OTHER things (real highlights links, etc.)
+// — never to make this specific badge more "accurate." Less accurate
+// but uniform is the correct choice here, on purpose, permanently.
+function gameLiveStatus(kickoffUTC){
+  if (!kickoffUTC) return null;
+  const now = Date.now();
+  const kickoff = new Date(kickoffUTC).getTime();
+  const estDurationMs = 210 * 60000; // flat for every game, never varies by matchup
+  if (now < kickoff) return 'upcoming';
+  if (now < kickoff + estDurationMs) return 'live';
+  return 'likely-final';
+}
+function renderStatusBadge(kickoffUTC){
+  const status = gameLiveStatus(kickoffUTC);
+  if (status === 'live') return `<span class="status-badge live">🔴 Likely live now</span>`;
+  if (status === 'likely-final') return `<span class="status-badge final">Likely final — check for highlights</span>`;
+  return '';
+}
+
+function renderWatch(r, team, showScores){
+  const postTime = formatPostTime(r.kickoffUTC, r.network, team);
+  const hasFinalScore = r.home_score !== null && r.away_score !== null;
+  const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)} · ${r.network} ${renderStatusBadge(r.kickoffUTC)}</div>`;
+
+  if (showScores && hasFinalScore){
+    return `${kickoffLine}
+    <div class="watch-row">
+      <span class="watch-icon">✓</span>
+      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span>
+    </div>`;
+  }
+  if (showScores && !hasFinalScore){
+    return `${kickoffLine}
+    <div class="watch-row">
+      <span class="watch-icon">▶</span>
+      <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime} · not final yet</span></span>
+    </div>`;
+  }
+  return `${kickoffLine}
+  <div class="watch-row">
+    <span class="watch-icon">▶</span>
+    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>
+  </div>`;
+}
+
+function renderSnapshot(team, ranked, showScores, liveLastGame){
+  const el = document.getElementById('teamSnapshot');
+  // Prefer the real, server-computed last game for live-fetched data
+  // (any year via the Worker) -- the static TEAM_GAMES object only
+  // ever had 2 teams in it (the Week 0 pilot), so any live team
+  // fell through to "no games played yet" regardless of reality.
+  let last;
+  if (liveLastGame !== undefined) {
+    last = liveLastGame;
+  } else {
+    const lastGames = TEAM_GAMES[team] || [];
+    last = lastGames.length ? lastGames[lastGames.length - 1] : null;
+  }
+  const nextGame = ranked.find(r => r.tier === 'Your Team');
+
+  let lastHtml;
+  if (!last){
+    lastHtml = `<span class="snap-value muted" style="display:inline">Season opener — no games played yet</span>`;
+  } else if (showScores){
+    const scoreText = (last.teamScore != null && last.oppScore != null) ? ` ${last.teamScore}–${last.oppScore}` : '';
+    lastHtml = `<span class="snap-result ${last.result === 'beat' ? 'win' : 'loss'}">${last.result === 'beat' ? 'W' : 'L'}${scoreText}</span>vs ${last.opp}`;
+  } else {
+    lastHtml = `Played vs ${last.opp} <span class="eta">(reveal scores to see result)</span>`;
+  }
+
+  const nextHtml = nextGame
+    ? `${team === nextGame.home ? 'vs' : 'at'} ${team === nextGame.home ? nextGame.away : nextGame.home} — ${formatKickoff(nextGame.kickoffUTC, team)}`
+    : `<span class="snap-value muted" style="display:inline">No game scheduled this week</span>`;
+
+  el.innerHTML = `
+    <div class="snap-col">
+      <span class="snap-label">Last game</span>
+      <span class="snap-value">${lastHtml}</span>
+    </div>
+    <div class="snap-col">
+      <span class="snap-label">Next game up</span>
+      <span class="snap-value">${nextHtml}</span>
+    </div>
+  `;
+}
+
+function renderCfpRulesCards(container, team, ranked){
+  // No cap. The whole point is being able to go all the way down to
+  // a 1% marginal improvement if that's genuinely how far someone
+  // wants to go — the priority order already does the work of
+  // deciding what to watch first vs. last, so cutting the list short
+  // artificially works against that, not with it.
+  ranked.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+
+    const isYourTeam = r.tier === 'Your Team';
+    const oddsText = r.favoredTeam && r.winProb
+      ? `${r.favoredTeam} ${Math.round(r.winProb*100)}% to win`
+      : '';
+
+    card.innerHTML = `
+      <div class="score-col">
+        <div class="score-badge ${isYourTeam ? 'your-team' : ''} ${r.elimination ? 'elimination' : ''}">${r.score.toFixed(0)}</div>
+        <div class="score-sub">Game<br>Gravity<span class="tm">™</span></div>
+      </div>
+      <div class="content-col">
+        ${r.elimination ? '<span class="elimination-tag">Win and in. Lose and out.</span><br>' : ''}
+        <p class="matchup">${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}</p>
+        <div class="meta-row">
+          <span class="tier-tag">${r.tier}</span>
+          ${r.rootFor ? `<span class="root-tag for">Root for ${r.rootFor}</span>` : ''}
+          ${oddsText ? `<span class="odds">${oddsText}</span>` : ''}
+        </div>
+        <p class="reason">${r.reason}</p>
+        ${renderWatch(r, team, showScores)}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Pinned teams — quick-switch chips for multi-team households or
+// anyone who follows more than one program. Capped at 8: enough for
+// a real die-hard's watchlist without turning into a second dropdown.
+// Persisted in localStorage since this is a real deployed site, not
+// an in-chat preview.
+const PIN_CAP = 8;
+function loadPinnedTeams(){
+  try {
+    const raw = localStorage.getItem('cg_pinned_teams');
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(t => TEAMS.includes(t)).slice(0, PIN_CAP) : [];
+  } catch(e){ return []; }
+}
+function savePinnedTeams(){
+  try { localStorage.setItem('cg_pinned_teams', JSON.stringify(pinnedTeams)); } catch(e){}
+}
+let pinnedTeams = loadPinnedTeams();
+
+function isPinned(team){ return pinnedTeams.includes(team); }
+function togglePin(team){
+  if (isPinned(team)){
+    pinnedTeams = pinnedTeams.filter(t => t !== team);
+  } else {
+    if (pinnedTeams.length >= PIN_CAP) pinnedTeams.shift(); // drop the oldest pin to make room
+    pinnedTeams.push(team);
+  }
+  savePinnedTeams();
+  renderPinnedUI(team);
+}
+function selectTeam(team){
+  const conf = conferenceOf(team);
+  if (conf){
+    conferenceSelect.value = conf;
+    populateTeams(conf);
+    teamSelect.value = team;
+  }
+  render();
+}
+function renderPinnedUI(currentTeam){
+  const pinBtn = document.getElementById('pinBtn');
+  pinBtn.classList.toggle('pinned', isPinned(currentTeam));
+
+  const row = document.getElementById('pinnedRow');
+  row.innerHTML = '';
+  pinnedTeams.forEach(t => {
+    const chip = document.createElement('span');
+    chip.className = 'pinned-chip' + (t === currentTeam ? ' active' : '');
+    chip.innerHTML = `${t} <span class="unpin" data-team="${t}">×</span>`;
+    chip.addEventListener('click', (e) => {
+      if (e.target.classList.contains('unpin')){
+        e.stopPropagation();
+        togglePin(t);
+        return;
+      }
+      selectTeam(t);
+    });
+    row.appendChild(chip);
+  });
+}
+document.getElementById('pinBtn').addEventListener('click', () => togglePin(teamSelect.value));
+
+// Live data — fetches from the Worker, which computes the real
+// scoring engine server-side against live CFBD data. Falls back to
+// the local static engine ONLY when we actually have backup data for
+// that exact week (2026, weeks 0-1) — everything else shows a clear
+// loading/error state rather than silently guessing.
+async function fetchLiveResults(team, year, week){
+  const url = `${WORKER_URL}/?team=${encodeURIComponent(team)}&year=${year}&week=${week}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// National ranked-games ticker — every game this week with at least
+// one ranked team, independent of the currently selected team. Only
+// makes sense against live data (the static 2026 fallback only ever
+// covered 2 weeks for the pilot), so this quietly does nothing if
+// live data isn't available for the current season/week.
+async function fetchNationalRankedGames(year, week){
+  const url = `${WORKER_URL}/?year=${year}&week=${week}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+function renderNationalTicker(data){
+  const section = document.getElementById('nationalTicker');
+  const list = document.getElementById('nationalTickerList');
+  if (!data || !data.games || data.games.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  list.innerHTML = '';
+  data.games.forEach(g => {
+    const row = document.createElement('div');
+    const isMarquee = g.game_id === data.marqueeGameId;
+    const isClose = g.winProb !== null && g.winProb !== undefined && g.winProb <= 0.58;
+    row.className = 'national-game-row' + (isMarquee ? ' marquee' : '');
+    const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
+    const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
+    row.innerHTML = `
+      <span class="matchup-text">${isMarquee ? '<span class="marquee-tag">Game of the Week</span>' : ''}${isClose ? '<span class="game-tag close">Close Game</span>' : ''}${awayLabel} @ ${homeLabel}</span>
+      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}</span>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// Top 25 table — behind the spoiler wall since a real, current
+// record/trend/last-game table is itself a spoiler (it shows who's
+// won and lost). Fetches the full current poll from the Worker with
+// real records, trend vs. last week, a Colley-computed rank for
+// comparison, and each team's last/next game.
+async function fetchTop25(year, week){
+  const url = `${WORKER_URL}/?year=${year}&week=${week}&mode=top25`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+function trendCell(trend){
+  if (!trend) return '';
+  if (trend.direction === 'new') return '<span class="trend-new">NEW</span>';
+  if (trend.direction === 'flat') return '<span class="trend-flat">–</span>';
+  const arrow = trend.direction === 'up' ? '▲' : '▼';
+  const cls = trend.direction === 'up' ? 'trend-up' : 'trend-down';
+  return `<span class="${cls}">${arrow}${trend.delta}</span>`;
+}
+
+function gameCell(g, forOpponentLabel){
+  if (!g) return '—';
+  if (forOpponentLabel === 'last') {
+    const verb = g.result === 'beat' ? 'W' : 'L';
+    return `${verb} vs ${g.opp} ${g.teamScore}-${g.oppScore}`;
+  }
+  return `vs ${g.opp}`;
+}
+
+function renderTop25(data){
+  const section = document.getElementById('top25Section');
+  if (!data || !data.top25 || data.top25.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison`;
+  const body = document.getElementById('top25Body');
+  body.innerHTML = '';
+  data.top25.forEach(t => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${t.rank}</td>
+      <td>${t.school}</td>
+      <td>${t.wins}-${t.losses}</td>
+      <td>${trendCell(t.trend)}</td>
+      <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
+      <td>${gameCell(t.lastGame, 'last')}</td>
+      <td>${gameCell(t.nextGame, 'next')}</td>
+    `;
+    body.appendChild(row);
+  });
+}
+
+let _lastTop25Key = null;
+async function refreshTop25(){
+  const section = document.getElementById('top25Section');
+  if (!useLiveData || !showScores){
+    section.style.display = 'none';
+    _lastTop25Key = null; // force a re-fetch next time spoilers are turned back on
+    return;
+  }
+  const key = `${selectedSeason}-${WEEK}`;
+  if (key === _lastTop25Key) return;
+  _lastTop25Key = key;
+  try {
+    const data = await fetchTop25(selectedSeason, WEEK);
+    if (key !== `${selectedSeason}-${WEEK}` || !showScores) return; // stale by the time it resolved
+    renderTop25(data);
+  } catch (err) {
+    section.style.display = 'none';
+  }
+}
+
+// Full team schedule — every game for the season, with ranked
+// opponents, rivalry games, and close/toss-up matchups flagged.
+// Memoized per team+season only (not week), since the whole schedule
+// doesn't change week to week.
+async function fetchTeamSchedule(team, year){
+  const url = `${WORKER_URL}/?team=${encodeURIComponent(team)}&year=${year}&mode=schedule`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+function renderSchedule(data, team){
+  const section = document.getElementById('scheduleSection');
+  if (!data || !data.schedule || data.schedule.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  document.getElementById('scheduleTitle').textContent = `${team} — Full Schedule`;
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  data.schedule.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row';
+    const oppLabel = (g.oppRank ? `#${g.oppRank} ` : '') + g.opp;
+    const matchupText = g.home ? `${team} vs ${oppLabel}` : `${team} @ ${oppLabel}`;
+    let tags = '';
+    if (g.oppRank) tags += '<span class="game-tag ranked">Ranked</span>';
+    if (g.isRivalry) tags += '<span class="game-tag rivalry">Rivalry</span>';
+    if (g.isCloseGame) tags += '<span class="game-tag close">Close Game</span>';
+    row.innerHTML = `
+      <span class="matchup-text">${tags}${matchupText}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)}</span>
+    `;
+    list.appendChild(row);
+  });
+}
+
+let _lastScheduleKey = null;
+async function refreshSchedule(){
+  const team = teamSelect.value;
+  const section = document.getElementById('scheduleSection');
+  if (!useLiveData){ section.style.display = 'none'; return; }
+  const key = `${team}-${selectedSeason}`;
+  if (key === _lastScheduleKey) return;
+  _lastScheduleKey = key;
+  try {
+    const data = await fetchTeamSchedule(team, selectedSeason);
+    if (key !== `${teamSelect.value}-${selectedSeason}`) return; // stale
+    renderSchedule(data, team);
+  } catch (err) {
+    section.style.display = 'none';
+  }
+}
+
+function hasStaticFallback(){
+  return selectedSeason === '2026' && (WEEK in WEEKLY_GAMES);
+}
+
+// Memoized so switching teams (which re-runs render()) doesn't
+// re-fetch the same national ticker data over and over — only a real
+// season/week change triggers a new fetch.
+let _lastNationalKey = null;
+// Major upsets — reuses the SAME data the national ticker already
+// fetched (no extra request). Spoiler-gated on purpose: the mere fact
+// a game appears here is itself a spoiler (it means the favorite
+// lost), so this only ever shows once showScores is on. Even then,
+// deliberately never displays the actual score -- just enough to
+// flag "this is worth watching" without revealing the outcome detail.
+function renderUpsets(data){
+  const section = document.getElementById('upsetsSection');
+  if (!showScores || !data || !data.games){
+    section.style.display = 'none';
+    return;
+  }
+  const upsets = data.games.filter(g => {
+    if (g.home_score === null || g.home_score === undefined || g.away_score === null || g.away_score === undefined) return false;
+    if (!g.favoredTeam || g.winProb === null || g.winProb === undefined) return false;
+    const winner = g.home_score > g.away_score ? g.home : g.away;
+    return winner !== g.favoredTeam && g.winProb >= 0.75; // a real favorite actually lost
+  });
+  if (upsets.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  const list = document.getElementById('upsetsList');
+  list.innerHTML = '';
+  upsets.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row';
+    row.innerHTML = `
+      <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
+      <a class="game-meta" href="${g.link}" target="_blank" rel="noopener">Highlights →</a>
+    `;
+    list.appendChild(row);
+  });
+}
+
+let _lastNationalData = null;
+async function refreshNationalTicker(){
+  if (!useLiveData) { renderUpsets(null); return; }
+  const key = `${selectedSeason}-${WEEK}`;
+  if (key !== _lastNationalKey) {
+    _lastNationalKey = key;
+    try {
+      const data = await fetchNationalRankedGames(selectedSeason, WEEK);
+      if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
+      _lastNationalData = data;
+      renderNationalTicker(data);
+    } catch (err) {
+      document.getElementById('nationalTicker').style.display = 'none';
+      _lastNationalData = null;
+    }
+  }
+  renderUpsets(_lastNationalData);
+}
+
+async function render(){
+  const team = teamSelect.value;
+  applyTeamTheme(team);
+  renderPinnedUI(team);
+  updateShareCta();
+  refreshNationalTicker();
+  refreshTop25();
+  refreshSchedule();
+
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+
+  const thisRenderTeam = team, thisRenderSeason = selectedSeason, thisRenderWeek = WEEK;
+  const isStale = () => teamSelect.value !== thisRenderTeam || selectedSeason !== thisRenderSeason || WEEK !== thisRenderWeek;
+
+  if (useLiveData){
+    container.innerHTML = '<p class="empty-note">Loading live data…</p>';
+    document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team}`;
+    document.getElementById('weekTagRest').textContent = `· fetching…`;
+
+    try {
+      const data = await fetchLiveResults(team, selectedSeason, WEEK);
+      if (isStale()) return; // a newer render started while this was in flight — drop this one
+      container.innerHTML = '';
+
+      document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team} — who to root for`;
+      document.getElementById('weekTagRest').textContent = `· ${data.pollSource || pollSource(WEEK)} Poll · Make the Playoff · live`;
+      renderSnapshot(team, data.results || [], showScores, data.lastGame);
+      if (!data.results || data.results.length === 0){
+        container.innerHTML = '<p class="empty-note">No games with meaningful impact found for this week.</p>';
+        return;
+      }
+      document.getElementById('viewToggleRow').style.display = '';
+      const orderedResults = resultsViewMode === 'watch' ? watchabilityOrder(data.results) : data.results;
+      renderCfpRulesCards(container, team, orderedResults);
+      return;
+    } catch (err){
+      if (isStale()) return;
+      document.getElementById('viewToggleRow').style.display = 'none';
+      if (!hasStaticFallback()){
+        container.innerHTML = `<p class="empty-note">Couldn't load live data for this week (${err.message}). Try a different week, or check back soon.</p>`;
+        document.getElementById('weekTagRest').textContent = `· live data unavailable`;
+        return;
+      }
+      // fall through to the static path below — only reachable for
+      // 2026 weeks 0-1, where real hand-curated backup data exists
+    }
+  }
+
+  document.getElementById('viewToggleRow').style.display = 'none';
+  const ranked = scoreWeek(team);
+
+  document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team} — who to root for`;
+  document.getElementById('weekTagRest').textContent = `· ${pollSource(WEEK)} Poll · Make the Playoff`;
+  renderSnapshot(team, ranked, showScores);
+
+  if (ranked.length === 0){
+    container.innerHTML = '<p class="empty-note">No games with meaningful impact found for this week.</p>';
+    return;
+  }
+
+  renderCfpRulesCards(container, team, ranked);
+}
+
+// Slot-machine style entrance: spins through random numbers, then
+// decelerates and settles on the real current week — a bit of fun,
+// not a data mechanism.
+function spinWeekJersey(target){
+  const el = document.getElementById('weekJerseyNumber');
+  if (!el) return;
+  let tick = 0;
+  const maxTicks = 16;
+  function step(){
+    if (tick < maxTicks){
+      el.textContent = 1 + Math.floor(Math.random() * 20);
+      tick++;
+      const delay = 35 + (tick * tick * 1.8); // ease out — spins fast, then slows
+      setTimeout(step, delay);
+    } else {
+      el.textContent = target;
+      el.classList.add('settled');
+    }
+  }
+  step();
+}
+
+// The big intro: counts up through the REAL current Top 13 — not
+// random numbers — one beat per rank, landing on #13, the actual
+// "first team out" of a 12-team playoff. At each beat, the entire
+// site's live color theme switches to that rank's team (same
+// mechanism as picking a team from the dropdown), and the real
+// Conference/Team selectors update in step, so what's rolling is
+// the actual page, not a decorative animation running on top of it.
+// Quick, non-blocking entrance: cycles the REAL Conference and Team
+// dropdowns (and the live site-wide color theme) through the actual
+// current Top 13, one beat per rank, landing on #13 — the real
+// "first team out" of a 12-team playoff. Nothing is fixed/overlaid
+// on top of the page, so the user can click into the real controls
+// at any moment and immediately take over — doing so cancels the
+// remaining beats rather than fighting the user's own selection.
+// Pacing keeps a floor of ~100ms between beats on purpose: full-page
+// color changes any faster start to read as strobing, not snappy.
+let introCancelled = false;
+function cancelIntro(){ introCancelled = true; }
+conferenceSelect.addEventListener('mousedown', cancelIntro, { once:true });
+teamSelect.addEventListener('mousedown', cancelIntro, { once:true });
+
+function runIntroAnimation(onComplete){
+  const badge = document.getElementById('introBadge');
+  const wordmarkEl = document.getElementById('wordmarkGuide');
+  const maxBeat = 13;
+  let beat = 1;
+
+  function step(){
+    if (introCancelled){
+      badge.classList.remove('showing');
+      if (wordmarkEl) wordmarkEl.textContent = 'Guide';
+      return;
+    }
+    const team = teamAtRank(beat);
+    if (team){
+      badge.textContent = `#${beat}`;
+      badge.classList.add('showing');
+      if (wordmarkEl) wordmarkEl.textContent = team; // "RootFor[Team].com" for the beat
+      applyTeamTheme(team);
+      const conf = conferenceOf(team);
+      if (conf){
+        conferenceSelect.value = conf;
+        populateTeams(conf);
+        teamSelect.value = team;
+      }
+    }
+    if (beat < maxBeat){
+      beat++;
+      const delay = 100 + beat * 9; // fast but floored — no strobing
+      setTimeout(step, delay);
+    } else {
+      setTimeout(() => {
+        badge.classList.remove('showing');
+        if (wordmarkEl) wordmarkEl.textContent = 'Guide'; // settle back to the real site name
+        onComplete();
+      }, 250);
+    }
+  }
+  step();
+}
+
+// Suggestion box — no backend on a static site, so this opens the
+// visitor's own email client with the message pre-filled, addressed
+// to a real inbox you check. Swap FEEDBACK_EMAIL for your real
+// address before this goes live.
+const FEEDBACK_EMAIL = "graydon.wd@gmail.com";
+document.getElementById('suggestionSubmit').addEventListener('click', () => {
+  const textEl = document.getElementById('suggestionText');
+  const noteEl = document.getElementById('suggestionNote');
+  const text = textEl.value.trim();
+  if (!text){
+    noteEl.textContent = "Type something first — even a couple words helps.";
+    return;
+  }
+  const subject = encodeURIComponent("RootForGuide.com Suggestion");
+  const body = encodeURIComponent(text);
+  window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`;
+  noteEl.textContent = "Opening your email app to send this — thank you.";
+  textEl.value = '';
+});
+
+// Share — the growth mechanic. Builds a plain-text summary of the
+// team's top 5 Game Gravity games. Deliberately leaves out the
+// YouTube watch links — those are for personal use, not for a public
+// post — and always links back to the site, since that's the whole
+// point of a share feature.
+function buildShareText(team){
+  const ranked = scoreWeek(team);
+  const top5 = ranked.slice(0, 5);
+  const lines = top5.map((r, i) => {
+    const header = `${i + 1}. ${r.score.toFixed(0)} GG\u2122 · ${r.away} @ ${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
+    const when = formatKickoff(r.kickoffUTC, team); // team's own local time, ET alongside
+    const details = `   ${when}${r.network ? ` · ${r.network}` : ''}`;
+    return `${header}\n${details}`;
+  });
+  // Site link placed right up top (drives traffic before anyone scrolls
+  // past it) as well as at the end (second chance to click through).
+  return `🏈 ${team} — Week ${WEEK} Game Gravity\u2122\nrootforguide.com\n\n${lines.join('\n\n')}\n\nFull breakdown → rootforguide.com`;
+}
+
+// Legacy clipboard fallback — works even without HTTPS/secure context
+// (e.g. someone opening this file directly via file://), unlike the
+// modern Clipboard API, which silently refuses in that situation.
+function legacyCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+function doShare(noteElId){
+  const team = teamSelect.value;
+  const text = buildShareText(team);
+  const noteEl = document.getElementById(noteElId);
+  const hasShare = typeof navigator !== 'undefined' && navigator.share;
+  const hasClipboard = typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText;
+
+  if (hasShare){
+    navigator.share({ title: 'RootForGuide.com', text })
+      .then(() => { noteEl.textContent = "Shared!"; })
+      .catch((err) => {
+        if (err && err.name === 'AbortError') return; // user closed the share sheet — not an error
+        fallbackCopy();
+      });
+    return;
+  }
+  fallbackCopy();
+
+  function fallbackCopy(){
+    if (hasClipboard){
+      navigator.clipboard.writeText(text).then(() => {
+        noteEl.textContent = "Copied! Paste it anywhere.";
+      }).catch(() => {
+        if (legacyCopy(text)) noteEl.textContent = "Copied! Paste it anywhere.";
+        else noteEl.textContent = text;
+      });
+    } else if (legacyCopy(text)){
+      noteEl.textContent = "Copied! Paste it anywhere.";
+    } else {
+      noteEl.textContent = text; // last resort — visible, selectable text
+    }
+  }
+}
+document.getElementById('shareBtn').addEventListener('click', () => doShare('shareNote'));
+
+function updateShareCta(){
+  const btn = document.getElementById('shareCta');
+  if (!btn) return;
+  const team = teamSelect.value;
+  btn.textContent = `📤 Share ${team}'s picks with your group chat`;
+}
+document.getElementById('shareCta').addEventListener('click', () => doShare('shareNoteBottom'));
+
+runIntroAnimation(() => {
+  render();
+  spinWeekJersey(WEEK);
+});
+</script>
+</body>
+</html>
