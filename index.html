@@ -226,6 +226,13 @@
     color:var(--chalk-dim);
     max-width:46ch;
   }
+  .tagline-sub{
+    margin:6px 0 0;
+    font-size:14px;
+    color:var(--chalk-dim);
+    opacity:0.75;
+    max-width:46ch;
+  }
 
   .site-settings{
     display:flex;
@@ -660,6 +667,26 @@
     text-align:right;
     white-space:nowrap;
   }
+  .national-game-row.stacked{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+    padding:14px 16px;
+  }
+  .national-game-row.stacked .matchup-text{
+    white-space:normal;
+    line-height:1.4;
+  }
+  .national-game-row.stacked .game-meta{
+    text-align:left;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .national-game-row.stacked .game-meta a{
+    color:var(--amber);
+    font-weight:600;
+  }
 
   .top25-section{
     margin-top:40px;
@@ -696,6 +723,24 @@
   .top25-table .trend-flat{ color:var(--chalk-dim); }
   .top25-table .trend-new{ color:var(--amber); font-weight:700; }
   .spoiler-mask{ color:var(--chalk-dim); letter-spacing:1px; }
+  .record-note{ color:var(--amber); margin-left:1px; cursor:help; }
+  .quick-peek{
+    display:inline-block;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding:1px 4px;
+    border-radius:4px;
+    font-size:12px;
+    opacity:0.7;
+  }
+  .quick-peek:hover, .quick-peek:active{ opacity:1; background:var(--panel-line); }
+  .quick-peek[data-revealed="1"]{
+    font-weight:700;
+    color:var(--amber);
+    opacity:1;
+    background:var(--panel-line);
+  }
   .table-divider-row td{
     padding:6px 12px !important;
     border-top:1px dashed var(--amber) !important;
@@ -800,6 +845,32 @@
     background:var(--amber);
     color:var(--field);
   }
+
+  .tab-nav{
+    display:flex;
+    gap:8px;
+    margin:20px 0 24px;
+    border-bottom:1px solid var(--panel-line);
+  }
+  .tab-btn{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:16px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    padding:10px 4px 12px;
+    border:none;
+    background:transparent;
+    color:var(--chalk-dim);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    margin-right:20px;
+  }
+  .tab-btn.active{
+    color:var(--chalk);
+    border-bottom-color:var(--amber);
+  }
+  .tab-panel{ min-height:200px; }
 
   .suggestion-box{
     margin-top:56px;
@@ -917,7 +988,8 @@
         </div>
       </div>
     </div>
-    <p class="tagline">Pick your team. We'll show you what games should matter to you this week — and who to root for, with a Game Gravity<span class="tm">™</span> score for what's actually at stake.</p>
+    <p class="tagline">The spoiler-free, data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
+    <p class="tagline-sub">100% free, with direct links to every game's extended highlights.</p>
 
     <div class="site-settings">
       <div class="setting-block">
@@ -944,6 +1016,13 @@
     <select id="seasonSelect"></select>
   </div>
 
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="gamegravity">Game Gravity</button>
+    <button class="tab-btn" data-tab="rankings">Rankings</button>
+    <button class="tab-btn" data-tab="schedule">Schedule</button>
+  </div>
+
+  <div class="tab-panel" id="panelRankings" style="display:none;">
   <section class="top25-section" id="top25Section" style="display:none;">
     <h2 class="national-ticker-title">Top 25</h2>
     <p class="national-ticker-sub" id="top25Sub"></p>
@@ -961,7 +1040,9 @@
       The Colley Matrix ranks teams from wins and losses alone — a real network of who's beaten whom, nothing else. It never sees margin of victory, injuries, or a team's reputation; a 1-point win counts exactly the same as a 40-point blowout. Strength of schedule isn't guessed at or assigned by anyone — it emerges purely from how each team's results connect to everyone else's, and that network only gets stronger as more real games are played. Early in a season, with few connections between teams, it can disagree with the human poll a lot — that's the method being honest about how little evidence it has yet, not a flaw to explain away.
     </div>
   </section>
+  </div>
 
+  <div class="tab-panel" id="panelSchedule" style="display:none;">
   <section class="last-next-section" id="lastNextSection" style="display:none;">
     <h2 class="national-ticker-title">Top 25 Schedule</h2>
     <p class="national-ticker-sub">Last week's ranked-vs-ranked games and upsets (spoiler-safe until you toggle spoilers), and next week's ranked matchups.</p>
@@ -988,7 +1069,9 @@
     <p class="national-ticker-sub">Real results, but no scores shown here — just a heads-up that something worth seeing happened.</p>
     <div id="upsetsList"></div>
   </section>
+  </div>
 
+  <div class="tab-panel" id="panelGameGravity">
   <div class="results-head">
     <div class="results-title-group">
       <h2 id="resultsTitle">This week's games that matter</h2>
@@ -1018,6 +1101,8 @@
   <div id="results"></div>
   <button class="share-cta" id="shareCta"></button>
   <p class="share-note-bottom" id="shareNoteBottom"></p>
+  </div>
+
   <section class="suggestion-box">
     <p class="suggestion-title">Something missing? Something wrong? Tell us.</p>
     <p class="suggestion-sub">Wrong odds, a team that should be ranked, a feature idea — whatever it is.</p>
@@ -1224,10 +1309,21 @@ function formatInTz(kickoffUTC, tz){
 // equivalent alongside it (the sport's de facto reference time) so
 // nobody has to convert in their head — unless the team IS in
 // Eastern, in which case that would just repeat the same time twice.
+// Uses the VISITOR's own real local timezone as the primary display
+// (a standard, always-available browser API) -- falling back to the
+// team's home timezone only if that detection somehow fails. This
+// used to always show team time regardless of who was actually
+// looking at the page.
+function visitorTz(){
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch(e){ return null; }
+}
 function formatKickoff(kickoffUTC, team){
   if (!kickoffUTC) return "Time TBA";
-  const local = formatInTz(kickoffUTC, teamTz(team));
-  if (teamTz(team) === "America/New_York") return local;
+  const primaryTz = visitorTz() || teamTz(team);
+  const local = formatInTz(kickoffUTC, primaryTz);
+  if (primaryTz === "America/New_York") return local;
   const etFmt = new Intl.DateTimeFormat('en-US', {
     hour:'numeric', minute:'2-digit', timeZoneName:'short', timeZone:"America/New_York"
   });
@@ -1971,6 +2067,24 @@ document.getElementById('btnViewWatch').addEventListener('click', () => {
   document.getElementById('btnViewPath').classList.remove('active');
   render();
 });
+
+// Tab nav -- Game Gravity, Rankings, Schedule. Game Gravity is the
+// core feature and stays the default/active tab on load; the other
+// two are simple show/hide panels, not re-fetches, so switching is
+// instant.
+const TAB_PANELS = { gamegravity:'panelGameGravity', rankings:'panelRankings', schedule:'panelSchedule' };
+function switchTab(tabName){
+  Object.keys(TAB_PANELS).forEach(name => {
+    const panel = document.getElementById(TAB_PANELS[name]);
+    if (panel) panel.style.display = (name === tabName) ? '' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
 document.getElementById('colleyInfoIcon').addEventListener('click', (e) => {
   e.stopPropagation();
   const pop = document.getElementById('colleyInfoPopover');
@@ -2032,6 +2146,46 @@ function renderStatusBadge(kickoffUTC){
   return '';
 }
 
+// "Quick Score" peek — a per-game, press-and-hold reveal, independent
+// of the global spoiler toggle. Deliberately reuses the SAME uniform
+// gameLiveStatus() threshold as the status badge above, not real
+// completion data -- a peek button that became available the instant
+// a game *actually* ended would itself be a leak (a fast-ending game
+// unlocking sooner than a slow one tips off overtime, exactly the
+// thing that badge exists to prevent). The button's own look never
+// changes either way -- it's simply absent until the uniform window
+// has passed, then always the same icon from then on.
+function quickPeekButton(scoreText, kickoffUTC, homeScoreVal, awayScoreVal){
+  // kickoffUTC === 'skip-check' means the caller has already
+  // established this is safely in the past (e.g. a prior week's
+  // result, not something from today) -- everywhere else, the same
+  // uniform threshold as the status badge still applies.
+  if (kickoffUTC !== 'skip-check' && gameLiveStatus(kickoffUTC) !== 'likely-final') return '';
+  if (homeScoreVal === null || homeScoreVal === undefined || awayScoreVal === null || awayScoreVal === undefined) return '';
+  const safeScore = String(scoreText).replace(/"/g, '&quot;');
+  return ` <span class="quick-peek" data-score="${safeScore}" title="Hold to peek at the score">👁</span>`;
+}
+(function setUpQuickPeekHandlers(){
+  const reveal = (e) => {
+    const btn = e.target.closest && e.target.closest('.quick-peek');
+    if (!btn) return;
+    btn.dataset.revealed = '1';
+    btn.textContent = btn.dataset.score;
+  };
+  const hideAll = () => {
+    document.querySelectorAll('.quick-peek[data-revealed="1"]').forEach(el => {
+      el.dataset.revealed = '';
+      el.textContent = '👁';
+    });
+  };
+  document.addEventListener('mousedown', reveal);
+  document.addEventListener('touchstart', reveal, { passive:true });
+  document.addEventListener('mouseup', hideAll);
+  document.addEventListener('mouseleave', hideAll);
+  document.addEventListener('touchend', hideAll);
+  document.addEventListener('touchcancel', hideAll);
+})();
+
 function renderWatch(r, team, showScores){
   const postTime = formatPostTime(r.kickoffUTC, r.network, team);
   const hasFinalScore = r.home_score !== null && r.away_score !== null;
@@ -2054,7 +2208,7 @@ function renderWatch(r, team, showScores){
   return `${kickoffLine}
   <div class="watch-row">
     <span class="watch-icon">▶</span>
-    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>
+    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(`${r.away_score}-${r.home_score}`, r.kickoffUTC, r.home_score, r.away_score)}
   </div>`;
 }
 
@@ -2245,26 +2399,42 @@ function renderLastWeekColumn(data){
     list.innerHTML = '<p class="empty-note">No games last week.</p>';
     return;
   }
-  const doubleRanked = data.games.filter(isDoubleRanked);
-  const upsets = showScores ? data.games.filter(g => !isDoubleRanked(g) && isUpsetGame(g)) : [];
+  const upsetGames = showScores ? data.games.filter(isUpsetGame) : [];
+  const upsetIds = new Set(upsetGames.map(g => g.game_id));
+  // Every ranked-involving game from last week, except upsets (which
+  // get their own distinct, spoiler-gated call-out below) -- this
+  // used to only include double-ranked matchups, silently dropping
+  // every single-ranked-team game from the list entirely.
+  const regularGames = data.games.filter(g => !upsetIds.has(g.game_id));
 
-  if (doubleRanked.length === 0 && upsets.length === 0){
-    list.innerHTML = '<p class="empty-note">No ranked-vs-ranked matchups or upsets last week.</p>';
+  if (regularGames.length === 0 && upsetGames.length === 0){
+    list.innerHTML = '<p class="empty-note">No ranked matchups last week.</p>';
     return;
   }
-  doubleRanked.forEach(g => {
+  regularGames.forEach(g => {
     const row = document.createElement('div');
-    row.className = 'national-game-row';
-    const awayLabel = `#${g.awayRank} ${g.away}`;
-    const homeLabel = `#${g.homeRank} ${g.home}`;
+    const doubleRanked = isDoubleRanked(g);
+    row.className = 'national-game-row stacked' + (doubleRanked ? ' double-ranked' : '');
+    const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
+    const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
     const hasScore = g.home_score !== null && g.home_score !== undefined && g.away_score !== null && g.away_score !== undefined;
-    const scorePart = (showScores && hasScore) ? `<span class="game-meta">${g.away_score}-${g.home_score}</span>` : '<span class="game-meta">—</span>';
-    row.innerHTML = `<span class="matchup-text">${awayLabel} @ ${homeLabel}</span>${scorePart}`;
+    // 'skip-check' here too -- this is always a PRIOR week's game by
+    // definition (the "Last Week" column), safely past any live-game
+    // timing window regardless of exact kickoff time.
+    const peek = quickPeekButton(`${g.away_score}-${g.home_score}`, 'skip-check', g.home_score, g.away_score);
+    // Highlights link shown regardless of the spoiler toggle -- the
+    // link itself reveals nothing (same rule as the Game Gravity
+    // "Watch free, spoiler-safe" links); only the score stays gated.
+    const highlightsLink = g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
+    const scorePart = (showScores && hasScore)
+      ? `<span class="game-meta">${g.away_score}-${g.home_score} ${highlightsLink}</span>`
+      : `<span class="game-meta">${peek}${peek ? ' ' : ''}${highlightsLink}</span>`;
+    row.innerHTML = `<span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>${scorePart}`;
     list.appendChild(row);
   });
-  upsets.forEach(g => {
+  upsetGames.forEach(g => {
     const row = document.createElement('div');
-    row.className = 'national-game-row';
+    row.className = 'national-game-row stacked';
     row.innerHTML = `
       <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
       <a class="game-meta" href="${g.link}" target="_blank" rel="noopener">Highlights →</a>
@@ -2286,7 +2456,7 @@ function renderNextWeekColumn(data){
   data.games.forEach(g => {
     const row = document.createElement('div');
     const doubleRanked = isDoubleRanked(g);
-    row.className = 'national-game-row' + (doubleRanked ? ' double-ranked' : '');
+    row.className = 'national-game-row stacked' + (doubleRanked ? ' double-ranked' : '');
     const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
     const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
     row.innerHTML = `
@@ -2324,7 +2494,11 @@ function gameCell(g, forOpponentLabel){
   if (!g) return '—';
   if (forOpponentLabel === 'last') {
     const verb = g.result === 'beat' ? 'W' : 'L';
-    return `${verb} vs ${g.opp} ${g.teamScore}-${g.oppScore}`;
+    // No overtime-timing risk to guard here (unlike same-week games) --
+    // this is always a PRIOR week's result by definition, so a peek
+    // button can show unconditionally once the row itself is real.
+    const peek = quickPeekButton(`${g.teamScore}-${g.oppScore}`, 'skip-check', g.teamScore, g.oppScore);
+    return `${verb} vs ${g.opp}${peek}`;
   }
   return `vs ${g.opp}`;
 }
@@ -2336,10 +2510,21 @@ function renderTop25(data){
     return;
   }
   section.style.display = '';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — turn on spoilers to see records, trend, and last week\'s results'}`;
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see last week\'s results'}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
   const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
+  // Pre-spoiler, show the record as it stood BEFORE last week's game
+  // (computed by backing that one result out), not the fully
+  // up-to-date record -- the current record would directly reveal
+  // whether that game was a win or a loss. Once spoilers are on, the
+  // real, current record shows instead.
+  const recordCell = (t) => {
+    if (showScores || !t.lastGame) return `${t.wins}-${t.losses}`;
+    const priorWins = t.wins - (t.lastGame.result === 'beat' ? 1 : 0);
+    const priorLosses = t.losses - (t.lastGame.result === 'lost_to' ? 1 : 0);
+    return `<span title="Entering last week's game — not yet updated">${priorWins}-${priorLosses}<sup class="record-note">†</sup></span>`;
+  };
   // Visual dividers for the 12-team CFP structure: top 4 seeds get a
   // first-round bye, and the field itself cuts off at 12 -- this is a
   // simplified visual approximation (the real selection isn't a strict
@@ -2358,14 +2543,14 @@ function renderTop25(data){
       <td>${t.rank}</td>
       <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
       <td>${t.school}</td>
-      <td>${mask(t.wins + '-' + t.losses)}</td>
-      <td>${mask(trendCell(t.trend))}</td>
+      <td>${recordCell(t)}</td>
+      <td>${trendCell(t.trend)}</td>
       <td>${mask(gameCell(t.lastGame, 'last'))}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
     if (t.rank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round —'));
-    if (t.rank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line (12-team field, approximate) —'));
+    if (t.rank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
   });
 }
 
@@ -2416,7 +2601,7 @@ function renderSchedule(data, team){
   list.innerHTML = '';
   data.schedule.forEach(g => {
     const row = document.createElement('div');
-    row.className = 'national-game-row';
+    row.className = 'national-game-row stacked';
     const oppLabel = (g.oppRank ? `#${g.oppRank} ` : '') + g.opp;
     const matchupText = g.home ? `${team} vs ${oppLabel}` : `${team} @ ${oppLabel}`;
     let tags = '';
@@ -2425,7 +2610,7 @@ function renderSchedule(data, team){
     if (g.isCloseGame) tags += '<span class="game-tag close">Close Game</span>';
     row.innerHTML = `
       <span class="matchup-text">${tags}${matchupText}</span>
-      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : ''}</span>
     `;
     list.appendChild(row);
   });
@@ -2654,6 +2839,15 @@ function runIntroAnimation(onComplete){
     } else {
       setTimeout(() => {
         if (wordmarkEl) wordmarkEl.textContent = 'Guide'; // settle back to the real site name
+        // The animation just cycled through ranks 1-13, leaving the
+        // dropdowns set to whichever team is ranked #13 -- restore
+        // the REAL default (a favorited team, if the visitor has one,
+        // otherwise the normal fallback) before continuing, or the
+        // animation silently overwrites it every single page load.
+        conferenceSelect.value = defaultConference;
+        populateTeams(defaultConference);
+        teamSelect.value = defaultTeam;
+        applyTeamTheme(defaultTeam);
         onComplete();
       }, 250);
     }
