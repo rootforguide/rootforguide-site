@@ -48,26 +48,6 @@
   }
   .wrap{max-width:760px;margin:0 auto;padding:0 24px 80px; position:relative;}
 
-  /* ---------- Intro countdown badge (non-blocking) ---------- */
-  .intro-badge{
-    display:inline-block;
-    font-family:'Big Shoulders Display', sans-serif;
-    font-weight:800;
-    font-size:13px;
-    color:var(--amber);
-    -webkit-text-stroke:1px var(--chalk);
-    paint-order:stroke fill;
-    background:var(--panel);
-    border:1px solid var(--panel-line);
-    border-radius:3px;
-    padding:1px 7px;
-    margin-left:6px;
-    vertical-align:middle;
-    opacity:0;
-    transition:opacity 0.15s ease;
-  }
-  .intro-badge.showing{ opacity:1; }
-
   /* ---------- Reserved ad space (160x600 pillars) ---------- */
   .ad-pillar{
     display:none; /* only shown on wide viewports, see media query below */
@@ -666,25 +646,13 @@
     border-radius:8px;
     margin-bottom:8px;
   }
-  .national-game-row.marquee{
+  .national-game-row.double-ranked{
     border-color:var(--amber);
     box-shadow:0 0 0 1px var(--amber) inset;
   }
   .national-game-row .matchup-text{
     font-size:14px;
     font-weight:600;
-  }
-  .national-game-row .marquee-tag{
-    display:inline-block;
-    font-size:10px;
-    font-weight:700;
-    letter-spacing:0.5px;
-    text-transform:uppercase;
-    color:var(--field);
-    background:var(--amber);
-    border-radius:4px;
-    padding:2px 6px;
-    margin-right:8px;
   }
   .national-game-row .game-meta{
     font-size:12px;
@@ -727,6 +695,22 @@
   .top25-table .trend-down{ color:#f87171; }
   .top25-table .trend-flat{ color:var(--chalk-dim); }
   .top25-table .trend-new{ color:var(--amber); font-weight:700; }
+  .spoiler-mask{ color:var(--chalk-dim); letter-spacing:1px; }
+  .table-divider-row td{
+    padding:6px 12px !important;
+    border-top:1px dashed var(--amber) !important;
+    border-bottom:1px dashed var(--amber) !important;
+    background:rgba(255,193,7,0.06);
+  }
+  .divider-label{
+    display:block;
+    text-align:center;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--amber);
+  }
 
   .info-icon{
     display:inline-flex;
@@ -950,7 +934,7 @@
   </header>
 
   <div class="picker">
-    <p class="field-label">Conference <span class="intro-badge" id="introBadge"></span></p>
+    <p class="field-label">Conference</p>
     <select id="conferenceSelect"></select>
 
     <p class="field-label" style="margin-top:20px;">Team</p>
@@ -974,7 +958,7 @@
       </table>
     </div>
     <div class="info-popover" id="colleyInfoPopover" style="display:none;">
-      The Colley Matrix is a bias-free rating method that ranks teams purely from who's beaten whom, using real results only — no polls, no opinion, no margin of victory. It can disagree with the human poll a lot early in a season, when few games have connected enough teams for the math to have much to go on.
+      The Colley Matrix ranks teams from wins and losses alone — a real network of who's beaten whom, nothing else. It never sees margin of victory, injuries, or a team's reputation; a 1-point win counts exactly the same as a 40-point blowout. Strength of schedule isn't guessed at or assigned by anyone — it emerges purely from how each team's results connect to everyone else's, and that network only gets stronger as more real games are played. Early in a season, with few connections between teams, it can disagree with the human poll a lot — that's the method being honest about how little evidence it has yet, not a flaw to explain away.
     </div>
   </section>
 
@@ -983,7 +967,7 @@
     <p class="national-ticker-sub">Last week's ranked-vs-ranked games and upsets (spoiler-safe until you toggle spoilers), and next week's ranked matchups.</p>
     <div class="last-next-grid">
       <div class="last-next-col">
-        <h3 class="last-next-col-title">Last Week</h3>
+        <h3 class="last-next-col-title" id="lastWeekColTitle">Last Week</h3>
         <div id="lastWeekList"></div>
       </div>
       <div class="last-next-col">
@@ -1858,7 +1842,7 @@ let selectedSeason = '2026';
 // season CFBD has on file is now genuinely live, not hand-curated —
 // this replaces the old BYU-2025-pilot special case entirely, since
 // real data is strictly better than a manually researched stand-in.
-const WORKER_URL = 'https://rootforguide-data.hbyf5dp6jh.workers.dev';
+const WORKER_URL = 'https://rootforguide-api.hbyf5dp6jh.workers.dev';
 let useLiveData = true; // easy kill-switch if the Worker ever needs to be bypassed
 
 const SEASON_OPTIONS = [
@@ -2255,6 +2239,7 @@ function isUpsetGame(g){
 // until spoilers are on, and even then never show the exact score.
 function renderLastWeekColumn(data){
   const list = document.getElementById('lastWeekList');
+  document.getElementById('lastWeekColTitle').textContent = data && data.pollSource ? `Last Week — ${data.pollSource} Poll` : 'Last Week';
   list.innerHTML = '';
   if (!data || !data.games){
     list.innerHTML = '<p class="empty-note">No games last week.</p>';
@@ -2289,8 +2274,8 @@ function renderLastWeekColumn(data){
 }
 
 // "Next Week" column: no spoiler concerns, just every upcoming
-// ranked-involving game, chronologically, with the marquee matchup
-// flagged the same way the old single-week ticker did.
+// ranked-involving game, chronologically, with double-ranked
+// matchups (both teams ranked) visually highlighted.
 function renderNextWeekColumn(data){
   const list = document.getElementById('nextWeekList');
   list.innerHTML = '';
@@ -2300,12 +2285,12 @@ function renderNextWeekColumn(data){
   }
   data.games.forEach(g => {
     const row = document.createElement('div');
-    const isMarquee = g.game_id === data.marqueeGameId;
-    row.className = 'national-game-row' + (isMarquee ? ' marquee' : '');
+    const doubleRanked = isDoubleRanked(g);
+    row.className = 'national-game-row' + (doubleRanked ? ' double-ranked' : '');
     const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
     const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
     row.innerHTML = `
-      <span class="matchup-text">${isMarquee ? '<span class="marquee-tag">Game of the Week</span>' : ''}${awayLabel} @ ${homeLabel}</span>
+      <span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>
       <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}</span>
     `;
     list.appendChild(row);
@@ -2351,42 +2336,59 @@ function renderTop25(data){
     return;
   }
   section.style.display = '';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison`;
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — turn on spoilers to see records, trend, and last week\'s results'}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
+  const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
+  // Visual dividers for the 12-team CFP structure: top 4 seeds get a
+  // first-round bye, and the field itself cuts off at 12 -- this is a
+  // simplified visual approximation (the real selection isn't a strict
+  // top-12 cutoff, since conference champions get automatic bids
+  // regardless of exact rank), just meant as a quick visual reminder,
+  // not a claim about who's actually in.
+  const dividerRow = (label) => {
+    const row = document.createElement('tr');
+    row.className = 'table-divider-row';
+    row.innerHTML = `<td colspan="7"><span class="divider-label">${label}</span></td>`;
+    return row;
+  };
   data.top25.forEach(t => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${t.rank}</td>
       <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
       <td>${t.school}</td>
-      <td>${t.wins}-${t.losses}</td>
-      <td>${trendCell(t.trend)}</td>
-      <td>${gameCell(t.lastGame, 'last')}</td>
+      <td>${mask(t.wins + '-' + t.losses)}</td>
+      <td>${mask(trendCell(t.trend))}</td>
+      <td>${mask(gameCell(t.lastGame, 'last'))}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
+    if (t.rank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round —'));
+    if (t.rank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line (12-team field, approximate) —'));
   });
 }
 
 let _lastTop25Key = null;
+let _lastTop25Data = null;
 async function refreshTop25(){
   const section = document.getElementById('top25Section');
-  if (!useLiveData || !showScores){
-    section.style.display = 'none';
-    _lastTop25Key = null; // force a re-fetch next time spoilers are turned back on
-    return;
-  }
+  if (!useLiveData){ section.style.display = 'none'; _lastTop25Key = null; _lastTop25Data = null; return; }
+  section.style.display = ''; // always present once live data works -- spoilers only mask specific cells below, not the whole section
   const key = `${selectedSeason}-${WEEK}`;
-  if (key === _lastTop25Key) return;
-  _lastTop25Key = key;
-  try {
-    const data = await fetchTop25(selectedSeason, WEEK);
-    if (key !== `${selectedSeason}-${WEEK}` || !showScores) return; // stale by the time it resolved
-    renderTop25(data);
-  } catch (err) {
-    section.style.display = 'none';
+  if (key !== _lastTop25Key) {
+    _lastTop25Key = key;
+    try {
+      const data = await fetchTop25(selectedSeason, WEEK);
+      if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
+      _lastTop25Data = data;
+    } catch (err) {
+      section.style.display = 'none';
+      _lastTop25Data = null;
+      return;
+    }
   }
+  renderTop25(_lastTop25Data); // re-render every time -- masking depends on showScores, which can change without a new fetch
 }
 
 // Full team schedule — every game for the season, with ranked
@@ -2458,8 +2460,14 @@ function hasStaticFallback(){
 // flag "this is worth watching" without revealing the outcome detail.
 function renderUpsets(data){
   const section = document.getElementById('upsetsSection');
-  if (!showScores || !data || !data.games){
+  const list = document.getElementById('upsetsList');
+  if (!data || !data.games){
     section.style.display = 'none';
+    return;
+  }
+  section.style.display = ''; // always present -- no full-section hide/show based on spoilers, to avoid the rest of the page jumping around
+  if (!showScores){
+    list.innerHTML = '<p class="empty-note">Turn on spoilers to see this week\'s upsets.</p>';
     return;
   }
   const upsets = data.games.filter(g => {
@@ -2469,11 +2477,9 @@ function renderUpsets(data){
     return winner !== g.favoredTeam && g.winProb >= 0.75; // a real favorite actually lost
   });
   if (upsets.length === 0){
-    section.style.display = 'none';
+    list.innerHTML = '<p class="empty-note">No major upsets last week.</p>';
     return;
   }
-  section.style.display = '';
-  const list = document.getElementById('upsetsList');
   list.innerHTML = '';
   upsets.forEach(g => {
     const row = document.createElement('div');
@@ -2584,12 +2590,12 @@ function spinWeekJersey(target){
   const el = document.getElementById('weekJerseyNumber');
   if (!el) return;
   let tick = 0;
-  const maxTicks = 16;
+  const maxTicks = 9; // shortened -- this used to run ~3.25s, well past the ~2.3s intro/color animation had already finished; now wraps up quickly right after, instead of dragging on its own
   function step(){
     if (tick < maxTicks){
       el.textContent = 1 + Math.floor(Math.random() * 20);
       tick++;
-      const delay = 35 + (tick * tick * 1.8); // ease out — spins fast, then slows
+      const delay = 30 + (tick * tick * 2.2); // ease out — spins fast, then slows, total ~900ms
       setTimeout(step, delay);
     } else {
       el.textContent = target;
@@ -2621,21 +2627,17 @@ conferenceSelect.addEventListener('mousedown', cancelIntro, { once:true });
 teamSelect.addEventListener('mousedown', cancelIntro, { once:true });
 
 function runIntroAnimation(onComplete){
-  const badge = document.getElementById('introBadge');
   const wordmarkEl = document.getElementById('wordmarkGuide');
   const maxBeat = 13;
   let beat = 1;
 
   function step(){
     if (introCancelled){
-      badge.classList.remove('showing');
       if (wordmarkEl) wordmarkEl.textContent = 'Guide';
       return;
     }
     const team = teamAtRank(beat);
     if (team){
-      badge.textContent = `#${beat}`;
-      badge.classList.add('showing');
       if (wordmarkEl) wordmarkEl.textContent = team; // "RootFor[Team].com" for the beat
       applyTeamTheme(team);
       const conf = conferenceOf(team);
@@ -2651,7 +2653,6 @@ function runIntroAnimation(onComplete){
       setTimeout(step, delay);
     } else {
       setTimeout(() => {
-        badge.classList.remove('showing');
         if (wordmarkEl) wordmarkEl.textContent = 'Guide'; // settle back to the real site name
         onComplete();
       }, 250);
