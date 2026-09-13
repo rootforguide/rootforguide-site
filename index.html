@@ -254,6 +254,15 @@
     opacity:0.85;
     margin-left:1px;
   }
+  .site-why{
+    margin:16px 0 0;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:700;
+    font-size:24px;
+    line-height:1.3;
+    color:var(--chalk);
+    max-width:44ch;
+  }
   .tagline{
     margin:12px 0 0;
     font-size:18px;
@@ -984,6 +993,53 @@
     color:var(--field);
   }
 
+  .step-indicator{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:24px 0 4px;
+    flex-wrap:wrap;
+  }
+  .step-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    opacity:0.5;
+  }
+  .step-item.active, .step-item.done{ opacity:1; }
+  .step-num{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:14px;
+    border:2px solid var(--panel-line);
+    color:var(--chalk-dim);
+    flex-shrink:0;
+  }
+  .step-item.active .step-num{
+    border-color:var(--amber);
+    background:var(--amber);
+    color:var(--field);
+  }
+  .step-item.done .step-num{
+    border-color:#4ade80;
+    background:#4ade80;
+    color:var(--field);
+  }
+  .step-label{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.2px;
+    color:var(--chalk-dim);
+    white-space:nowrap;
+  }
+  .step-item.active .step-label, .step-item.done .step-label{ color:var(--chalk); }
+  .step-arrow{ color:var(--panel-line); font-size:14px; }
   .tab-nav{
     display:flex;
     gap:8px;
@@ -1007,6 +1063,16 @@
   .tab-btn.active{
     color:var(--chalk);
     border-bottom-color:var(--amber);
+  }
+  .tab-nav-divider{
+    width:1px;
+    height:20px;
+    background:var(--panel-line);
+    margin:0 4px 12px;
+    align-self:flex-end;
+  }
+  .tab-btn-saved{
+    color:var(--amber) !important;
   }
   .tab-panel{ min-height:200px; }
 
@@ -1127,6 +1193,7 @@
         </div>
       </div>
     </div>
+    <p class="site-why">We believe sports should be enjoyed without subscriptions, without ads between plays, without spoilers — and only the games that actually matter to you.</p>
     <p class="tagline">The spoiler-free, data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
     <p class="tagline-sub">100% free, with direct links to every game's extended highlights.</p>
 
@@ -1154,11 +1221,14 @@
     </div>
   </header>
 
+  <div class="step-indicator" id="stepIndicator"></div>
+
   <div class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
     <button class="tab-btn" data-tab="rankings">Rankings</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
-    <button class="tab-btn" data-tab="saved">Saved</button>
+    <span class="tab-nav-divider"></span>
+    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved — Watch →</button>
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
@@ -2217,6 +2287,36 @@ teamSelect.value = defaultTeam;
 // to the top so they can choose a team before seeing any content;
 // once they have a favorite, it moves to its normal spot at the
 // bottom (a "change team" control, not a gate).
+// STEP 1 (pick a team) genuinely gates everything else now, not just
+// a repositioned picker -- a first-time visitor sees ONLY the team
+// picker, with the tabs and all their content hidden entirely, until
+// they've picked one. A returning visitor with an already-saved
+// favorite skips straight past this, exactly like walking up to a
+// restaurant that already has your order on file.
+let hasPickedTeamThisSession = !!firstFavoritedTeam();
+function updateStepGating(){
+  const wrapper = document.getElementById('pickerAndPinned');
+  const tabNav = document.getElementById('tabNav');
+  if (!hasPickedTeamThisSession){
+    if (wrapper) wrapper.style.display = '';
+    if (tabNav) tabNav.style.display = 'none';
+    Object.values(TAB_PANELS).forEach(id => {
+      const p = document.getElementById(id);
+      if (p) p.style.display = 'none';
+    });
+  } else {
+    if (tabNav) tabNav.style.display = '';
+    switchTab(_activeTabName || 'gamegravity');
+  }
+  renderStepIndicator();
+}
+teamSelect.addEventListener('change', () => {
+  if (!hasPickedTeamThisSession){
+    hasPickedTeamThisSession = true;
+    updateStepGating();
+  }
+});
+
 if (!firstFavoritedTeam()){
   const wrapper = document.getElementById('pickerAndPinned');
   const tabNav = document.getElementById('tabNav');
@@ -2264,7 +2364,47 @@ document.getElementById('btnViewWatch').addEventListener('click', () => {
 // two are simple show/hide panels, not re-fetches, so switching is
 // instant.
 const TAB_PANELS = { gamegravity:'panelGameGravity', rankings:'panelRankings', schedule:'panelSchedule', saved:'panelSaved' };
+// The visual step-by-step progression ("pick your team" -> "pick
+// your games" -> "watch highlights") -- Step 1 uses the same
+// persisted favorited-team check as the rest of the site (a returning
+// visitor who already has a team shouldn't be told to "pick" it
+// again). Step 3 is scoped to THIS session only, not all-time ever-
+// watched status -- watching highlights is a weekly action, not a
+// one-time achievement, so every fresh visit starts the walkthrough
+// over rather than showing it permanently completed after the first
+// click ever.
+let hasWatchedThisSession = false;
+function renderStepIndicator(){
+  const el = document.getElementById('stepIndicator');
+  if (!el) return;
+  const step1Done = hasPickedTeamThisSession;
+  const step3Done = hasWatchedThisSession;
+  const steps = [
+    { label: 'Pick Your Team', done: step1Done, active: !step1Done },
+    { label: 'Pick Your Games', done: step3Done, active: step1Done && !step3Done },
+    { label: 'Watch Highlights', done: step3Done, active: step3Done }
+  ];
+  el.innerHTML = steps.map((s, i) => {
+    const cls = s.done ? 'done' : (s.active ? 'active' : '');
+    const num = s.done ? '✓' : (i + 1);
+    const arrow = i < steps.length - 1 ? '<span class="step-arrow">→</span>' : '';
+    return `<div class="step-item ${cls}"><span class="step-num">${num}</span><span class="step-label">${s.label}</span></div>${arrow}`;
+  }).join('');
+}
+// Marks step 3 the moment any highlights link is actually clicked,
+// then updates the indicator immediately so it visibly advances.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('.highlights-link');
+  if (!a) return;
+  if (!hasWatchedThisSession){
+    hasWatchedThisSession = true;
+    renderStepIndicator();
+  }
+});
+
+let _activeTabName = 'gamegravity';
 function switchTab(tabName){
+  _activeTabName = tabName;
   Object.keys(TAB_PANELS).forEach(name => {
     const panel = document.getElementById(TAB_PANELS[name]);
     if (panel) panel.style.display = (name === tabName) ? '' : 'none';
@@ -2834,6 +2974,12 @@ function togglePin(team){
   }
   savePinnedTeams();
   renderPinnedUI(team);
+  if (!hasPickedTeamThisSession){
+    hasPickedTeamThisSession = true;
+    updateStepGating();
+  } else {
+    renderStepIndicator();
+  }
 }
 function selectTeam(team){
   const conf = conferenceOf(team);
@@ -3373,6 +3519,7 @@ async function render(){
   const team = teamSelect.value;
   applyTeamTheme(team);
   renderPinnedUI(team);
+  renderStepIndicator();
   updateShareCta();
   refreshLastNextWeek();
   refreshTop25();
@@ -3620,6 +3767,7 @@ function updateShareCta(){
 document.getElementById('shareCta').addEventListener('click', () => doShare('shareNoteBottom'));
 
 runIntroAnimation(() => {
+  updateStepGating();
   render();
   spinWeekJersey(WEEK);
 
