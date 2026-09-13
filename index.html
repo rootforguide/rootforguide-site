@@ -6,6 +6,11 @@
 <title>RootForGuide — Know who to root for</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230A2557%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2246%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2240%22%20fill%3D%22%23D6202E%22%20text-anchor%3D%22middle%22%20stroke%3D%22%23F7F5F0%22%20stroke-width%3D%221.5%22%20paint-order%3D%22stroke%20fill%22%3ER%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230A2557%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2246%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2240%22%20fill%3D%22%23D6202E%22%20text-anchor%3D%22middle%22%20stroke%3D%22%23F7F5F0%22%20stroke-width%3D%221.5%22%20paint-order%3D%22stroke%20fill%22%3ER%3C/text%3E%3C/svg%3E">
+<!-- Google AdSense -- real publisher ID is wired in below. This
+     script alone also enables Auto ads (including mobile anchor/
+     interstitial placements Google decides on automatically), on top
+     of the specific manual placements further down the page. -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3642989962440359" crossorigin="anonymous"></script>
 <!-- CSP removed from this file on purpose: frame-ancestors doesn't
      work via a <meta> tag at all (real spec limitation, HTTP-header-
      only), and the rest of a strict CSP here breaks in-chat/sandboxed
@@ -92,8 +97,25 @@
     font-size:11px;
     opacity:0.7;
   }
+  .ad-mobile-banner{
+    margin:20px 0 0;
+    padding:10px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.08)), var(--panel);
+    border:1px dashed var(--panel-line);
+    border-radius:6px;
+    text-align:center;
+  }
+  .ad-mobile-banner .ad-label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+    margin-bottom:6px;
+  }
   @media (min-width:1300px){
     .ad-pillar{ display:flex; }
+    .ad-mobile-banner{ display:none; } /* the flanking skyscrapers take over here instead */
   }
 
   /* ---------- Header ---------- */
@@ -1073,20 +1095,21 @@
 <!-- Reserved ad space: standard 160x600 "Wide Skyscraper" pillars.
      Fixed-position, outside the content column, so they never cover
      or shift anything. Hidden below 1300px where there's no room to
-     show them without crowding the page. Swap the placeholder div
-     content for a real ad unit (e.g. <ins class="adsbygoogle">) when
-     ready to monetize. -->
-<div class="ad-pillar left" id="adPillarLeft" aria-hidden="true">
-  <div class="ad-pillar-inner">
-    <span class="ad-label">Advertisement</span>
-    <span class="ad-size">160 × 600</span>
-  </div>
+     show them without crowding the page -- the mobile banner further
+     down takes over there instead. Real publisher ID is wired in;
+     the ad slot IDs (currently 0000000000 placeholders) still need
+     swapping in once you've created actual ad units in AdSense. -->
+<div class="ad-pillar left" id="adPillarLeft">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:160px;height:600px"
+       data-ad-client="ca-pub-3642989962440359"
+       data-ad-slot="0000000000"></ins>
 </div>
-<div class="ad-pillar right" id="adPillarRight" aria-hidden="true">
-  <div class="ad-pillar-inner">
-    <span class="ad-label">Advertisement</span>
-    <span class="ad-size">160 × 600</span>
-  </div>
+<div class="ad-pillar right" id="adPillarRight">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:160px;height:600px"
+       data-ad-client="ca-pub-3642989962440359"
+       data-ad-slot="0000000000"></ins>
 </div>
 
 <div class="wrap">
@@ -1106,6 +1129,16 @@
     </div>
     <p class="tagline">The spoiler-free, data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
     <p class="tagline-sub">100% free, with direct links to every game's extended highlights.</p>
+
+    <div class="ad-mobile-banner">
+      <span class="ad-label">Advertisement</span>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-3642989962440359"
+           data-ad-slot="0000000000"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
 
     <div class="site-settings">
       <div class="setting-block">
@@ -3610,6 +3643,15 @@ runIntroAnimation(() => {
     spinWeekJersey(WEEK);
     render();
   }).catch(() => {}); // silently keep the Week 1 placeholder if this fails -- not worth surfacing an error for
+});
+
+// Activates every AdSense slot on the page (the skyscrapers and the
+// mobile banner) -- without this push call per <ins> element, AdSense
+// loads its script but never actually fills any of the ad units.
+// Wrapped in try/catch since an ad blocker throwing here shouldn't be
+// able to break anything else on the page.
+document.querySelectorAll('ins.adsbygoogle').forEach(() => {
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
 });
 </script>
 </body>
