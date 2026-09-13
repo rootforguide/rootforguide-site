@@ -2727,11 +2727,11 @@ function renderSnapshot(team, ranked, showScores, liveLastGame){
 
   el.innerHTML = `
     <div class="snap-col">
-      <span class="snap-label">Last game</span>
+      <span class="snap-label">Last game — Week ${WEEK - 1}</span>
       <span class="snap-value">${lastHtml}</span>
     </div>
     <div class="snap-col">
-      <span class="snap-label">Next game up</span>
+      <span class="snap-label">Next game up — Week ${WEEK}</span>
       <span class="snap-value">${nextHtml}</span>
     </div>
   `;
@@ -2954,9 +2954,10 @@ function renderNextWeekColumn(data){
     const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
     const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
     const oddsText = g.favoredTeam && g.winProb ? `${g.favoredTeam} ${Math.round(g.winProb * 100)}% to win` : '';
+    const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     row.innerHTML = `
       <span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>
-      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}${oddsText ? ` · <span class="odds">${oddsText}</span>` : ''}</span>
+      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}${oddsText ? ` · <span class="odds">${oddsText}</span>` : ''}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -3255,10 +3256,11 @@ function renderUpsets(data){
   list.innerHTML = '';
   upsets.forEach(g => {
     const row = document.createElement('div');
-    row.className = 'national-game-row';
+    row.className = 'national-game-row stacked';
+    const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     row.innerHTML = `
       <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
-      <a class="game-meta" href="${g.link}" target="_blank" rel="noopener">Highlights →</a>
+      <span class="game-meta">${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
     `;
     list.appendChild(row);
   });
