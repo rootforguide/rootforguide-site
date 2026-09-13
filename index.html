@@ -257,11 +257,11 @@
   .site-why{
     margin:18px 0 0;
     font-family:'Big Shoulders Display', sans-serif;
-    font-weight:700;
-    font-size:24px;
-    line-height:1.3;
+    font-weight:800;
+    font-size:30px;
+    line-height:1.15;
     color:var(--chalk);
-    max-width:44ch;
+    max-width:28ch;
   }
   .tagline{
     margin:14px 0 0;
@@ -307,6 +307,22 @@
 
   /* ---------- Picker ---------- */
   .picker{padding:36px 0 8px;}
+  .picker-continue-btn{
+    display:block;
+    width:100%;
+    margin-top:24px;
+    padding:14px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:18px;
+    font-weight:700;
+    text-align:center;
+    background:var(--amber);
+    color:var(--field);
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .picker-continue-btn:hover{ opacity:0.9; }
   .field-label{
     font-size:14px;
     color:var(--chalk-dim);
@@ -1068,12 +1084,7 @@
   .tab-nav-step-label{
     display:block;
     width:100%;
-    font-family:'Big Shoulders Display', sans-serif;
-    font-size:16px;
-    font-weight:700;
-    letter-spacing:0.2px;
-    color:var(--chalk);
-    margin-bottom:4px;
+    margin-bottom:8px;
   }
   .tab-btn{
     font-family:'Big Shoulders Display', sans-serif;
@@ -1249,8 +1260,8 @@
         </div>
       </div>
     </div>
-    <p class="site-why">We believe sports should be enjoyed without subscriptions, without ads between plays, without spoilers — and only the games that actually matter to you.</p>
-    <p class="tagline">The data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
+    <p class="site-why">Spoiler-free sports. Only the games that matter to you.</p>
+    <p class="tagline">What actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
     <div class="feature-pills">
       <span class="feature-pill">Spoiler-Free</span>
       <span class="feature-pill">100% Free</span>
@@ -1394,6 +1405,8 @@
 
     <p class="field-label" style="margin-top:20px;">Team</p>
     <select id="teamSelect"></select>
+
+    <button class="picker-continue-btn" id="pickerContinueBtn">This is my team →</button>
   </div>
   </div>
 
@@ -2256,11 +2269,31 @@ CONFERENCE_NAMES.forEach(c => {
   conferenceSelect.appendChild(opt);
 });
 
+// Picks readable text (black or white) against a given hex background,
+// using standard relative-luminance -- team colors range from very
+// dark (navy, black) to very light (yellow, white), so a single fixed
+// text color would be unreadable against half of them.
+function readableTextColor(hex){
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0,2), 16), g = parseInt(h.substring(2,4), 16), b = parseInt(h.substring(4,6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? '#000000' : '#FFFFFF';
+}
 function populateTeams(conference){
   teamSelect.innerHTML = '';
   CONFERENCES[conference].forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = `${rankBadge(t)}${t}`;
+    // Colored by team, so a long alphabetical list is easier to scan
+    // and find a specific team in -- browser support for styling
+    // <option> elements varies (works well in Chrome/Firefox/Edge,
+    // more limited in Safari), so this is a real but imperfect
+    // improvement, not a guaranteed one everywhere.
+    const colors = TEAM_COLORS[t];
+    if (colors && colors[0]){
+      opt.style.backgroundColor = colors[0];
+      opt.style.color = readableTextColor(colors[0]);
+    }
     teamSelect.appendChild(opt);
   });
 }
@@ -2338,20 +2371,34 @@ let hasPickedTeamThisSession = !!firstFavoritedTeam();
 function updateStepGating(){
   const wrapper = document.getElementById('pickerAndPinned');
   const tabNav = document.getElementById('tabNav');
+  const continueBtn = document.getElementById('pickerContinueBtn');
   if (!hasPickedTeamThisSession){
     if (wrapper) wrapper.style.display = '';
     if (tabNav) tabNav.style.display = 'none';
+    if (continueBtn) continueBtn.style.display = '';
     Object.values(TAB_PANELS).forEach(id => {
       const p = document.getElementById(id);
       if (p) p.style.display = 'none';
     });
   } else {
     if (tabNav) tabNav.style.display = '';
+    if (continueBtn) continueBtn.style.display = 'none'; // only relevant during Step 1 -- once past it, the picker is a "change team" control, not a gate
     switchTab(_activeTabName || 'gamegravity');
   }
   renderStepIndicator();
 }
 teamSelect.addEventListener('change', () => {
+  if (!hasPickedTeamThisSession){
+    hasPickedTeamThisSession = true;
+    updateStepGating();
+  }
+});
+document.getElementById('pickerContinueBtn').addEventListener('click', () => {
+  // Confirms whatever team is ALREADY showing (the intro animation's
+  // default, or whatever the visitor left the dropdown on) as the
+  // pick -- this used to be the missing piece: someone happy with the
+  // default had no way to actually proceed, since nothing they did
+  // fired the dropdown's own change event.
   if (!hasPickedTeamThisSession){
     hasPickedTeamThisSession = true;
     updateStepGating();
@@ -2397,28 +2444,38 @@ const TAB_PANELS = { gamegravity:'panelGameGravity', rankings:'panelRankings', s
 // over rather than showing it permanently completed after the first
 // click ever.
 let hasWatchedThisSession = false;
+// Single source of truth for step wording -- both the full indicator
+// and the sticky bar version pull from this exact same list, so they
+// can't say two different things for the same step ever again.
+const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Spoiler-Free Highlights'];
 function renderStepIndicator(){
   const el = document.getElementById('stepIndicator');
   if (!el) return;
   const step1Done = hasPickedTeamThisSession;
   const step3Done = hasWatchedThisSession;
   const steps = [
-    { label: 'Pick Your Team', done: step1Done, active: !step1Done },
-    { label: 'Pick Your Games', done: step3Done, active: step1Done && !step3Done },
-    { label: 'Spoiler-Free Highlights', done: step3Done, active: step3Done }
+    { label: STEP_LABELS[0], done: step1Done, active: !step1Done },
+    { label: STEP_LABELS[1], done: step3Done, active: step1Done && !step3Done },
+    { label: STEP_LABELS[2], done: step3Done, active: step3Done }
   ];
   el.innerHTML = steps.map((s, i) => {
     const cls = s.done ? 'done' : (s.active ? 'active' : '');
-    const num = s.done ? '✓' : (i + 1);
+    const num = s.done ? '✓' : '•';
     const arrow = i < steps.length - 1 ? '<span class="step-arrow">→</span>' : '';
-    return `<div class="step-item ${cls}"><span class="step-num">${num}</span><span class="step-label">${s.label}</span></div>${arrow}`;
+    return `<div class="step-item ${cls}"><span class="step-num">${num}</span><span class="step-label">Step ${i + 1}: ${s.label}</span></div>${arrow}`;
   }).join('');
   // Same progress kept visible in the sticky tab bar itself, so
   // scrolling past the full step indicator above doesn't mean losing
   // track of which step you're actually on.
   const stickyLabel = document.getElementById('tabNavStepLabel');
   if (stickyLabel){
-    stickyLabel.textContent = step3Done ? 'Step 3: Spoiler-Free Highlights' : (step1Done ? 'Step 2: Pick Your Games' : '');
+    if (step3Done){
+      stickyLabel.innerHTML = `<span class="step-item done"><span class="step-num">✓</span><span class="step-label">Step 3: ${STEP_LABELS[2]}</span></span>`;
+    } else if (step1Done){
+      stickyLabel.innerHTML = `<span class="step-item active"><span class="step-num">•</span><span class="step-label">Step 2: ${STEP_LABELS[1]}</span></span>`;
+    } else {
+      stickyLabel.innerHTML = '';
+    }
   }
 }
 // Marks step 3 the moment any highlights link is actually clicked,
