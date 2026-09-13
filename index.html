@@ -3272,7 +3272,15 @@ async function refreshLastNextWeek(){
   if (!useLiveData) { section.style.display = 'none'; renderUpsets(null); return; }
   const key = `${selectedSeason}-${WEEK}`;
   if (key !== _lastLastNextKey) {
-    _lastLastNextKey = key;
+    // Only marked as "handled" on actual success (below) -- marking
+    // it here, before the fetch even ran, meant a single transient
+    // failure (a network blip, the Worker cold-starting, anything
+    // momentary) would permanently hide this section for the rest of
+    // that week. No refresh could ever retry it, since the key
+    // already looked like it had been tried. Now a failure leaves the
+    // key alone, so the very next render() attempt (next refresh,
+    // next tab switch, the WEEK-correction pass a few seconds after
+    // load) gets a real retry instead of being silently blocked.
     try {
       const prevWeek = WEEK - 1;
       const [lastData, currentWeekData, nextData] = await Promise.all([
@@ -3281,6 +3289,7 @@ async function refreshLastNextWeek(){
         fetchNationalRankedGames(selectedSeason, WEEK + 1)
       ]);
       if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
+      _lastLastNextKey = key; // only cache the key once the fetch genuinely succeeded
       _lastWeekData = lastData;
       _currentWeekData = currentWeekData;
       section.style.display = '';
