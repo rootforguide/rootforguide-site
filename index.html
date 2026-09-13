@@ -3511,8 +3511,18 @@ runIntroAnimation(() => {
   // once we know it -- doesn't block the initial page paint above.
   fetchCurrentWeek(selectedSeason).then(({ week: realWeek, pollWeek: realPollWeek }) => {
     POLL_WEEK = (realPollWeek === null || realPollWeek === undefined) ? realWeek : realPollWeek;
-    if (realWeek === null || realWeek === undefined || realWeek === WEEK) return;
-    WEEK = realWeek;
+    // The week dropdown (and everything driven by WEEK -- Game
+    // Gravity, the schedule views) used to only follow the calendar's
+    // own game-day boundary, completely separate from POLL_WEEK. That
+    // meant a new poll publishing Sunday afternoon or a Tuesday CFP
+    // release wouldn't actually move the site forward until the
+    // calendar caught up on its own, later. Taking whichever of the
+    // two is further along fixes that -- the poll can now pull WEEK
+    // forward the moment it's out, and the calendar still covers the
+    // normal case where it's ahead of the poll instead.
+    const resolvedWeek = Math.max(realWeek ?? 0, POLL_WEEK ?? 0) || realWeek;
+    if (resolvedWeek === null || resolvedWeek === undefined || resolvedWeek === WEEK) return;
+    WEEK = resolvedWeek;
     weekSelect.value = WEEK;
     spinWeekJersey(WEEK);
     render();
