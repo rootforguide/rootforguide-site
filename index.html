@@ -699,6 +699,19 @@
     color:var(--amber);
     font-weight:600;
   }
+  .national-game-row.bye-row{
+    background:transparent;
+    border-style:dashed;
+    opacity:0.65;
+    padding:10px 16px;
+  }
+  .national-game-row.bye-row .matchup-text{
+    font-style:italic;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-size:12px;
+    color:var(--chalk-dim);
+  }
 
   .top25-section{
     margin-top:40px;
@@ -1163,7 +1176,7 @@
         <div id="lastWeekList"></div>
       </div>
       <div class="last-next-col">
-        <h3 class="last-next-col-title">Next Week</h3>
+        <h3 class="last-next-col-title" id="nextWeekColTitle">Next Week</h3>
         <div id="nextWeekList"></div>
       </div>
     </div>
@@ -2867,7 +2880,7 @@ function isUpsetGame(g){
 // until spoilers are on, and even then never show the exact score.
 function renderLastWeekColumn(data){
   const list = document.getElementById('lastWeekList');
-  document.getElementById('lastWeekColTitle').textContent = data && data.pollSource ? `Last Week — ${data.pollSource} Poll` : 'Last Week';
+  document.getElementById('lastWeekColTitle').textContent = data && data.pollSource ? `Week ${WEEK - 1} · Last Week — ${data.pollSource} Poll` : `Week ${WEEK - 1} · Last Week`;
   list.innerHTML = '';
   if (!data || !data.games){
     list.innerHTML = '<p class="empty-note">No games last week.</p>';
@@ -2928,6 +2941,7 @@ function renderLastWeekColumn(data){
 // matchups (both teams ranked) visually highlighted.
 function renderNextWeekColumn(data){
   const list = document.getElementById('nextWeekList');
+  document.getElementById('nextWeekColTitle').textContent = `Week ${WEEK + 1} · Next Week`;
   list.innerHTML = '';
   if (!data || !data.games || data.games.length === 0){
     list.innerHTML = '<p class="empty-note">No ranked matchups scheduled yet.</p>';
@@ -3121,7 +3135,23 @@ function renderSchedule(data, team){
   document.getElementById('scheduleTitle').textContent = `${rankBadge(team)}${team} — Full Schedule`;
   const list = document.getElementById('scheduleList');
   list.innerHTML = '';
+  // Explicit BYE markers for any skipped week -- this used to just
+  // silently jump from one week number to the next whenever a team
+  // had an open week, with nothing marking the gap. Scanning the list
+  // quickly, that reads as "this is their very next game" even when
+  // it's actually two or more weeks away.
+  const byeRow = (weekNum) => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row stacked bye-row';
+    row.innerHTML = `<span class="matchup-text">— Week ${weekNum}: BYE —</span>`;
+    return row;
+  };
+  let prevWeek = null;
   data.schedule.forEach(g => {
+    if (prevWeek !== null){
+      for (let w = prevWeek + 1; w < g.week; w++) list.appendChild(byeRow(w));
+    }
+    prevWeek = g.week;
     const row = document.createElement('div');
     row.className = 'national-game-row stacked';
     const oppLabel = (g.oppRank ? `#${g.oppRank} ` : '') + g.opp;
