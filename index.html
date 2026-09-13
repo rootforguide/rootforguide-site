@@ -753,6 +753,22 @@
     font-size:12px;
     color:var(--chalk-dim);
   }
+  .national-game-row.here-row{
+    background:rgba(214,32,46,0.08);
+    border-color:var(--amber);
+    border-style:solid;
+    border-width:1px 0;
+    padding:10px 16px;
+  }
+  .national-game-row.here-row .matchup-text{
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-size:12px;
+    font-weight:800;
+    color:var(--amber);
+    text-align:center;
+    width:100%;
+  }
 
   .top25-section{
     margin-top:40px;
@@ -817,7 +833,7 @@
     opacity:0.6;
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
-  .save-game-btn.saved{ opacity:1; color:var(--amber); }
+  .save-game-btn.saved{ opacity:1; color:#4ade80; }
   .highlights-link.watched{ color:var(--chalk-dim); opacity:0.75; }
   .result-badge{ font-weight:800; padding:1px 5px; border-radius:3px; margin-right:3px; }
   .result-badge.win{ color:#4ade80; background:rgba(74,222,128,0.12); }
@@ -826,6 +842,15 @@
     font-weight:800;
     color:var(--amber);
     margin-right:4px;
+  }
+  .highlights-ready{
+    font-weight:700;
+    color:var(--chalk);
+  }
+  .highlights-ready.muted{
+    font-weight:400;
+    color:var(--chalk-dim);
+    font-style:italic;
   }
   .cal-btn, .share-game-btn{
     display:inline-block;
@@ -1019,7 +1044,8 @@
     color:var(--field);
   }
   .step-label{
-    font-size:13px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:16px;
     font-weight:700;
     letter-spacing:0.2px;
     color:var(--chalk-dim);
@@ -1042,12 +1068,12 @@
   .tab-nav-step-label{
     display:block;
     width:100%;
-    font-size:11px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:16px;
     font-weight:700;
-    letter-spacing:0.5px;
-    text-transform:uppercase;
-    color:var(--amber);
-    margin-bottom:2px;
+    letter-spacing:0.2px;
+    color:var(--chalk);
+    margin-bottom:4px;
   }
   .tab-btn{
     font-family:'Big Shoulders Display', sans-serif;
@@ -1079,6 +1105,33 @@
   }
   .tab-panel{ min-height:200px; }
 
+  .view-more-games-btn{
+    display:block;
+    width:100%;
+    margin:8px 0 20px;
+    padding:14px;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:14px;
+    font-weight:700;
+    text-align:center;
+    background:var(--panel);
+    border:1px dashed var(--panel-line);
+    border-radius:8px;
+    color:var(--chalk-dim);
+    cursor:pointer;
+  }
+  .view-more-games-btn:hover{ color:var(--chalk); border-color:var(--chalk-dim); }
+  .next-step-guide{
+    margin:12px 0 24px;
+    padding:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:8px;
+    text-align:center;
+    font-size:14px;
+    color:var(--chalk-dim);
+  }
+  .next-step-guide a{ font-weight:700; }
   .suggestion-box{
     margin-top:56px;
     padding:20px;
@@ -1245,8 +1298,8 @@
     <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
     <div class="saved-controls">
       <div class="saved-sort-group">
-        <button class="saved-sort-btn active" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity<span class="tm">™</span></button>
-        <button class="saved-sort-btn" data-sort="chronological" onclick="setSavedSortMode('chronological')">Chronological</button>
+        <button class="saved-sort-btn" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity<span class="tm">™</span></button>
+        <button class="saved-sort-btn active" data-sort="chronological" onclick="setSavedSortMode('chronological')">Chronological</button>
         <button class="saved-sort-btn" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
       </div>
       <button class="watch-all-btn" onclick="watchAllSaved()">Watch all highlights →</button>
@@ -1575,6 +1628,16 @@ function formatKickoff(kickoffUTC, team){
   });
   const et = etFmt.format(new Date(kickoffUTC));
   return `${local} (${et})`;
+}
+// Same flat 210-minute (3.5hr) duration as gameLiveStatus() -- reused
+// here rather than duplicated, so this can never drift out of sync
+// with the uniform-timing rule that protects against overtime tipoffs
+// elsewhere on the site. Reuses formatKickoff's own timezone-priority
+// logic by just handing it a shifted timestamp.
+function highlightsReadyBy(kickoffUTC, team){
+  if (!kickoffUTC) return null;
+  const readyTime = new Date(new Date(kickoffUTC).getTime() + 210 * 60000);
+  return formatKickoff(readyTime.toISOString(), team);
 }
 
 // Real consensus spreads where reported this week; games without a
@@ -2444,7 +2507,7 @@ const SAVED_GAME_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 const WATCHED_CLICK_TTL_MS = 5 * 60 * 1000; // once a saved game's highlights link is actually clicked, remove it 5 minutes later regardless of the 6-day window above
 let savedGames = loadSavedGames(); // array, in custom/drag order
 pruneExpiredSavedGames();
-let savedSortMode = 'gamegravity'; // 'gamegravity' | 'chronological' | 'custom' -- matches the display order of the sort buttons
+let savedSortMode = 'chronological'; // 'gamegravity' | 'chronological' | 'custom'
 // One canonical key format for a game, used everywhere a save button
 // appears -- team names only, not kickoff time, so the exact same
 // real-world game always produces the exact same key regardless of
@@ -2678,6 +2741,16 @@ function renderSavedTab(){
     // highlights link before the game's even over and find nothing
     // there yet, with no indication that was expected.
     const status = renderStatusBadge(g.kickoffUTC);
+    // The actually useful question for this tab specifically isn't
+    // "when does the game start" -- it's "when will highlights
+    // exist". Shown prominently instead of the raw kickoff time,
+    // which this tab doesn't have much use for once a game is saved.
+    // Once a game is already past that point, the status badge above
+    // already covers it, so this doesn't repeat a now-past time.
+    const readyStatus = gameLiveStatus(g.kickoffUTC);
+    const readyText = (g.kickoffUTC && readyStatus !== 'likely-final')
+      ? `<span class="highlights-ready">Highlights likely ready by ${highlightsReadyBy(g.kickoffUTC, g.home)}</span>`
+      : (g.kickoffUTC ? '' : '<span class="highlights-ready muted">Time TBA</span>');
     // Shows the actual Game Gravity score when one was captured (only
     // games saved from the Game Gravity view have one) -- otherwise
     // the "Game Gravity" sort mode reorders the list with no visible
@@ -2685,7 +2758,7 @@ function renderSavedTab(){
     const ggScore = (g.score !== null && g.score !== undefined) ? `<span class="saved-gg-score">${Math.round(g.score)} GG<span class="tm">™</span></span> ` : '';
     row.innerHTML = `
       <span class="matchup-text">${dragHandle}${g.awayRank ? '#' + g.awayRank + ' ' : ''}${g.away} @ ${g.homeRank ? '#' + g.homeRank + ' ' : ''}${g.home}</span>
-      <span class="game-meta">${ggScore}${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
+      <span class="game-meta">${ggScore}${readyText}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -2857,13 +2930,18 @@ function renderSnapshot(team, ranked, showScores, liveLastGame){
   `;
 }
 
+let gameGravityExpanded = false; // reset per render() cycle -- see render()
+let _lastGameGravityKey = null;
+const GAME_GRAVITY_INITIAL_LIMIT = 15;
 function renderCfpRulesCards(container, team, ranked){
-  // No cap. The whole point is being able to go all the way down to
-  // a 1% marginal improvement if that's genuinely how far someone
-  // wants to go — the priority order already does the work of
-  // deciding what to watch first vs. last, so cutting the list short
-  // artificially works against that, not with it.
-  ranked.forEach(r => {
+  // Capped at 15 initially (half of that is already a lot to click
+  // through), with an explicit "view more" to go further if someone
+  // genuinely wants to. The priority order already does the work of
+  // deciding what to watch first vs. last, so this isn't losing
+  // anything -- it's just not dumping the entire list on someone who
+  // was only ever going to look at the first several anyway.
+  const visible = gameGravityExpanded ? ranked : ranked.slice(0, GAME_GRAVITY_INITIAL_LIMIT);
+  visible.forEach(r => {
     const card = document.createElement('div');
     card.className = 'game-card';
 
@@ -2891,6 +2969,25 @@ function renderCfpRulesCards(container, team, ranked){
     `;
     container.appendChild(card);
   });
+  if (!gameGravityExpanded && ranked.length > GAME_GRAVITY_INITIAL_LIMIT){
+    const moreBtn = document.createElement('button');
+    moreBtn.className = 'view-more-games-btn';
+    moreBtn.textContent = `View ${ranked.length - GAME_GRAVITY_INITIAL_LIMIT} more games`;
+    moreBtn.addEventListener('click', () => {
+      gameGravityExpanded = true;
+      container.innerHTML = '';
+      renderCfpRulesCards(container, team, ranked);
+    });
+    container.appendChild(moreBtn);
+  }
+  // A natural next step instead of just trailing off into an endless
+  // scroll -- points toward the other two tabs that make up the
+  // "pick your games" step, rather than assuming Game Gravity alone
+  // is the whole picture.
+  const guide = document.createElement('div');
+  guide.className = 'next-step-guide';
+  guide.innerHTML = `<p>Seen what you needed? Check the <a href="javascript:void(0)" onclick="switchTab('rankings')">Rankings</a> or your team's full <a href="javascript:void(0)" onclick="switchTab('schedule')">Schedule</a> next.</p>`;
+  container.appendChild(guide);
 }
 
 // Pinned teams — quick-switch chips for multi-team households or
@@ -3138,7 +3235,12 @@ function gameCell(g, forOpponentLabel, teamName, teamRank){
     const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null, awayRank: teamRank ?? null, homeRank: null });
     return `${resultText}${peek}${highlightsLink}${save}`;
   }
-  return `vs ${g.opp}`;
+  // "Next" game -- no result to gate, so no masking needed here at
+  // all; this was just missing a save button entirely before.
+  const nextAway = g.home ? g.opp : teamName;
+  const nextHome = g.home ? teamName : g.opp;
+  const nextSave = saveGameButton(gameSaveKey(nextAway, nextHome), { away: nextAway, home: nextHome, kickoffUTC: g.kickoffUTC ?? null, link: null, network: null, awayRank: g.home ? null : (teamRank ?? null), homeRank: g.home ? (teamRank ?? null) : null });
+  return `vs ${g.opp}${nextSave}`;
 }
 
 function renderTop25(data, isPriorSnapshot){
@@ -3213,7 +3315,7 @@ function renderTop25(data, isPriorSnapshot){
       <td>${recordCell(t)}</td>
       <td>${mask(trendCell(t.trend))}</td>
       <td>${gameCell(t.lastGame, 'last', t.school, t.displayRank)}</td>
-      <td>${gameCell(t.nextGame, 'next')}</td>
+      <td>${gameCell(t.nextGame, 'next', t.school, t.displayRank)}</td>
     `;
     body.appendChild(row);
     if (t.displayRank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
@@ -3295,11 +3397,34 @@ function renderSchedule(data, team){
     row.innerHTML = `<span class="matchup-text">— Week ${weekNum}: BYE —</span>`;
     return row;
   };
+  // A simple "you are here" marker in the season -- deliberately
+  // based on the WEEK NUMBER boundary only, not each game's actual
+  // real-time status. That's on purpose: a marker that moved based on
+  // precise live/final timing would itself be exactly the kind of
+  // overtime-timing leak the rest of the site works to avoid. This is
+  // just a coarse "where are we in the season" divider, nothing more.
+  const hereRow = () => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row stacked here-row';
+    row.innerHTML = `<span class="matchup-text">— You are here: Week ${WEEK} —</span>`;
+    return row;
+  };
+  let hereInserted = false;
+  const maybeInsertHere = (weekNum) => {
+    if (!hereInserted && weekNum >= WEEK){
+      list.appendChild(hereRow());
+      hereInserted = true;
+    }
+  };
   let prevWeek = null;
   data.schedule.forEach(g => {
     if (prevWeek !== null){
-      for (let w = prevWeek + 1; w < g.week; w++) list.appendChild(byeRow(w));
+      for (let w = prevWeek + 1; w < g.week; w++){
+        maybeInsertHere(w);
+        list.appendChild(byeRow(w));
+      }
     }
+    maybeInsertHere(g.week);
     prevWeek = g.week;
     const row = document.createElement('div');
     row.className = 'national-game-row stacked';
@@ -3477,6 +3602,16 @@ async function render(){
 
   const thisRenderTeam = team, thisRenderSeason = selectedSeason, thisRenderWeek = WEEK;
   const isStale = () => teamSelect.value !== thisRenderTeam || selectedSeason !== thisRenderSeason || WEEK !== thisRenderWeek;
+  // Collapses the "view more" expansion back down only when the team
+  // or week actually changes -- NOT on every render() call (spoiler
+  // toggles and other state changes also call render(), and losing
+  // the expansion just from flipping the spoiler switch would be a
+  // real annoyance, not a reset that means anything).
+  const gravityKey = `${thisRenderTeam}-${thisRenderWeek}`;
+  if (gravityKey !== _lastGameGravityKey){
+    _lastGameGravityKey = gravityKey;
+    gameGravityExpanded = false;
+  }
 
   if (useLiveData){
     container.innerHTML = '<p class="empty-note">Loading live data…</p>';
