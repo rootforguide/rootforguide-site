@@ -36,6 +36,16 @@
     --panel-line:#2A4C93;
   }
   *{box-sizing:border-box;}
+  /* Global link color -- without this, any <a> without a more
+     specific rule falls back to the browser default (blue unvisited,
+     purple visited), which reads as tacky against this dark navy/red
+     theme. Same color for both states on purpose: the site already
+     has its own "watched" indicator (a checkmark) for highlights
+     links specifically, so the browser's native visited-purple would
+     be redundant with that, not helpful. */
+  a{ color:var(--amber); }
+  a:visited{ color:var(--amber); }
+  a:hover{ color:var(--chalk); }
   html,body{margin:0;padding:0;}
   body{
     background:var(--field);
@@ -1117,7 +1127,7 @@
       <table class="top25-table">
         <thead>
           <tr>
-            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?" title="A ranking based only on what happened between the lines — who beat whom, nothing else.">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
+            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix? Click to see an explanation.">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
           </tr>
         </thead>
         <tbody id="top25Body"></tbody>
@@ -2986,7 +2996,16 @@ function renderTop25(data){
   // site is wrong." The week selector above already lets anyone pick
   // a specific week manually if they want a different one regardless.
   const pollLagNote = (POLL_WEEK !== WEEK) ? ` — this is the Week ${POLL_WEEK} poll; Week ${WEEK}'s hasn't been published yet` : '';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}`;
+  // The rank POSITION itself is a spoiler, not just the labels inside
+  // each row -- Texas jumping to #1 makes it obvious they won
+  // yesterday, even with every other cell still masked. Pre-spoiler,
+  // the table shows LAST week's order and rank numbers instead of
+  // this week's, using each team's prevRank -- not the updated rank
+  // the poll just gave them. A team with no prevRank (brand new to
+  // the poll this week) is left out of the pre-spoiler view entirely,
+  // since their very presence would announce they had a big week.
+  const spoilerNote = showScores ? '' : ' — showing last week\'s rankings until spoilers are on';
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}${spoilerNote}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
   const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
@@ -3001,6 +3020,13 @@ function renderTop25(data){
     const priorLosses = t.losses - (t.lastGame.result === 'lost_to' ? 1 : 0);
     return `<span title="Entering last week's game — not yet updated">${priorWins}-${priorLosses}<sup class="record-note">†</sup></span>`;
   };
+  const displayList = showScores
+    ? data.top25
+    : data.top25
+        .filter(t => t.prevRank !== null && t.prevRank !== undefined)
+        .map(t => ({ ...t, displayRank: t.prevRank }))
+        .sort((a, b) => a.displayRank - b.displayRank);
+  if (showScores) displayList.forEach(t => { t.displayRank = t.rank; });
   // Visual dividers for the 12-team CFP structure: top 4 seeds get a
   // first-round bye, and the field itself cuts off at 12 -- this is a
   // simplified visual approximation (the real selection isn't a strict
@@ -3013,20 +3039,20 @@ function renderTop25(data){
     row.innerHTML = `<td colspan="7"><span class="divider-label">${label}</span></td>`;
     return row;
   };
-  data.top25.forEach(t => {
+  displayList.forEach(t => {
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td>${t.rank}</td>
+      <td>${t.displayRank}</td>
       <td>${mask(t.colleyRank ? '#' + t.colleyRank : '—')}</td>
       <td>${t.school}</td>
       <td>${recordCell(t)}</td>
       <td>${mask(trendCell(t.trend))}</td>
-      <td>${gameCell(t.lastGame, 'last', t.school, t.rank)}</td>
+      <td>${gameCell(t.lastGame, 'last', t.school, t.displayRank)}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
-    if (t.rank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
-    if (t.rank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
+    if (t.displayRank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
+    if (t.displayRank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
   });
 }
 
