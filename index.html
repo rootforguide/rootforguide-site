@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RootForGuide — Know who to root for</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230A2557%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2246%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2240%22%20fill%3D%22%23D6202E%22%20text-anchor%3D%22middle%22%20stroke%3D%22%23F7F5F0%22%20stroke-width%3D%221.5%22%20paint-order%3D%22stroke%20fill%22%3ER%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230A2557%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2246%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2240%22%20fill%3D%22%23D6202E%22%20text-anchor%3D%22middle%22%20stroke%3D%22%23F7F5F0%22%20stroke-width%3D%221.5%22%20paint-order%3D%22stroke%20fill%22%3ER%3C/text%3E%3C/svg%3E">
 <!-- CSP removed from this file on purpose: frame-ancestors doesn't
      work via a <meta> tag at all (real spec limitation, HTTP-header-
      only), and the rest of a strict CSP here breaks in-chat/sandboxed
@@ -753,6 +755,24 @@
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:var(--amber); }
   .highlights-link.watched{ color:var(--chalk-dim); opacity:0.75; }
+  .result-badge{ font-weight:800; padding:1px 5px; border-radius:3px; margin-right:3px; }
+  .result-badge.win{ color:#4ade80; background:rgba(74,222,128,0.12); }
+  .result-badge.loss{ color:#f87171; background:rgba(248,113,113,0.12); }
+  .saved-gg-score{
+    font-weight:800;
+    color:var(--amber);
+    margin-right:4px;
+  }
+  .cal-btn, .share-game-btn{
+    display:inline-block;
+    cursor:pointer;
+    text-decoration:none;
+    padding:1px 4px;
+    border-radius:4px;
+    opacity:0.6;
+    color:inherit;
+  }
+  .cal-btn:hover, .share-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .highlights-link.watched::before{ content:"✓ "; color:#4ade80; }
   .saved-controls{
     display:flex;
@@ -824,6 +844,7 @@
     font-family:Georgia, serif;
     cursor:pointer;
     vertical-align:middle;
+    text-transform:none; /* the table header's uppercase transform was turning this into a capital "I" */
   }
   .info-icon:hover, .info-icon:focus{
     border-color:var(--amber);
@@ -1066,7 +1087,7 @@
   </header>
 
   <div class="tab-nav" id="tabNav">
-    <button class="tab-btn active" data-tab="gamegravity">Game Gravity</button>
+    <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
     <button class="tab-btn" data-tab="rankings">Rankings</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <button class="tab-btn" data-tab="saved">Saved</button>
@@ -1078,7 +1099,7 @@
     <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
     <div class="saved-controls">
       <div class="saved-sort-group">
-        <button class="saved-sort-btn active" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity</button>
+        <button class="saved-sort-btn active" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity<span class="tm">™</span></button>
         <button class="saved-sort-btn" data-sort="chronological" onclick="setSavedSortMode('chronological')">Chronological</button>
         <button class="saved-sort-btn" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
       </div>
@@ -1096,15 +1117,15 @@
       <table class="top25-table">
         <thead>
           <tr>
-            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?" title="A math-only ranking based purely on who beat whom — no opinions, no polls involved.">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
+            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?" title="A ranking based only on what happened between the lines — who beat whom, nothing else.">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
           </tr>
         </thead>
         <tbody id="top25Body"></tbody>
       </table>
     </div>
     <div class="info-popover" id="colleyInfoPopover" style="display:none;">
-      <p class="popover-simple"><strong>In simple terms:</strong> a computer ranking based purely on who beat whom — no humans, no opinions, no polls involved.</p>
-      The Colley Matrix ranks teams from wins and losses alone — a real network of who's beaten whom, nothing else. It never sees margin of victory, injuries, or a team's reputation; a 1-point win counts exactly the same as a 40-point blowout. Strength of schedule isn't guessed at or assigned by anyone — it emerges purely from how each team's results connect to everyone else's, and that network only gets stronger as more real games are played. Early in a season, with few connections between teams, it can disagree with the human poll a lot — that's the method being honest about how little evidence it has yet, not a flaw to explain away.
+      <p class="popover-simple"><strong>In simple terms:</strong> a ranking based only on what actually happened between the lines — who beat whom, nothing else.</p>
+      The Colley Matrix ranks teams from wins and losses alone — a real network of who's beaten whom, based only on the final score, nothing else. It never factors in injuries, a team's reputation, or what anyone expected going in — only what actually happened on the field. Margin doesn't matter either; a 1-point win counts exactly the same as a 40-point blowout. Strength of schedule isn't guessed at or assigned by anyone — it emerges purely from how each team's real results connect to everyone else's, and that network only gets stronger as more games are actually played. Early in a season, with few connections between teams, it can disagree with the human poll a lot — that's the method being honest about how little evidence it has yet, not a flaw to explain away. Unlike the AP poll, it isn't tied to a weekly human vote — it updates as soon as any game actually finishes, even mid-week, so it can shift before the poll itself does.
     </div>
   </section>
   </div>
@@ -1132,8 +1153,8 @@
   </section>
 
   <section class="national-ticker" id="upsetsSection" style="display:none;">
-    <h2 class="national-ticker-title">Major Upsets</h2>
-    <p class="national-ticker-sub">Real results, but no scores shown here — just a heads-up that something worth seeing happened.</p>
+    <h2 class="national-ticker-title">Upsets</h2>
+    <p class="national-ticker-sub">Any real favorite that actually lost, not just the big ones — no scores shown here, just a heads-up that something worth seeing happened.</p>
     <div id="upsetsList"></div>
   </section>
   </div>
@@ -1145,7 +1166,7 @@
       <button class="pin-btn" id="pinBtn" title="Pin this team" aria-label="Pin this team">
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L14.5 8.5 L21 9 L16 13.5 L17.5 20 L12 16.5 L6.5 20 L8 13.5 L3 9 L9.5 8.5 Z" /></svg>
       </button>
-      <button class="share-btn" id="shareBtn" title="Share this team's Game Gravity picks" aria-label="Share">
+      <button class="share-btn" id="shareBtn" title="Share this team's Game Gravity™ picks" aria-label="Share">
         <svg viewBox="0 0 24 24" width="17" height="17"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
       </button>
     </div>
@@ -1155,7 +1176,6 @@
     </span>
   </div>
 
-  <div class="pinned-row" id="pinnedRow"></div>
   <p class="share-note" id="shareNote"></p>
 
   <div class="team-snapshot" id="teamSnapshot"></div>
@@ -1170,7 +1190,10 @@
   <p class="share-note-bottom" id="shareNoteBottom"></p>
   </div>
 
-  <div class="picker">
+  <div id="pickerAndPinned">
+  <div class="pinned-row" id="pinnedRow"></div>
+
+  <div class="picker" id="pickerBlock">
     <p class="field-label">Conference</p>
     <select id="conferenceSelect"></select>
 
@@ -1179,6 +1202,7 @@
 
     <p class="field-label" style="margin-top:20px;">Season</p>
     <select id="seasonSelect"></select>
+  </div>
   </div>
 
   <section class="suggestion-box">
@@ -2117,6 +2141,21 @@ conferenceSelect.value = defaultConference;
 populateTeams(defaultConference);
 teamSelect.value = defaultTeam;
 
+// When nobody has a favorited team yet, there's no real "default" to
+// show content for -- showing an arbitrary team's picks (whatever the
+// fallback happens to be) first isn't useful to a first-time visitor.
+// In that case only, the Conference/Team/Season picker moves back up
+// to the top so they can choose a team before seeing any content;
+// once they have a favorite, it moves to its normal spot at the
+// bottom (a "change team" control, not a gate).
+if (!firstFavoritedTeam()){
+  const wrapper = document.getElementById('pickerAndPinned');
+  const tabNav = document.getElementById('tabNav');
+  if (wrapper && tabNav && tabNav.parentNode){
+    tabNav.parentNode.insertBefore(wrapper, tabNav);
+  }
+}
+
 conferenceSelect.addEventListener('change', () => {
   populateTeams(conferenceSelect.value);
   render();
@@ -2169,10 +2208,18 @@ function switchTab(tabName){
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
-document.getElementById('colleyInfoIcon').addEventListener('click', (e) => {
-  e.stopPropagation();
+document.addEventListener('click', (e) => {
+  const icon = e.target.closest && e.target.closest('#colleyInfoIcon');
   const pop = document.getElementById('colleyInfoPopover');
-  pop.style.display = pop.style.display === 'none' ? '' : 'none';
+  if (icon){
+    e.stopPropagation();
+    pop.style.display = pop.style.display === 'none' ? '' : 'none';
+    return;
+  }
+  // Click anywhere else closes it, same as any other popover on the site.
+  if (pop && pop.style.display !== 'none' && !e.target.closest('#colleyInfoPopover')){
+    pop.style.display = 'none';
+  }
 });
 document.getElementById('colleyInfoIcon').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') document.getElementById('colleyInfoIcon').click();
@@ -2238,6 +2285,7 @@ function persistSavedGames(games){
   try { localStorage.setItem('cg_saved_games', JSON.stringify(games)); } catch(e){}
 }
 const SAVED_GAME_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const WATCHED_CLICK_TTL_MS = 5 * 60 * 1000; // once a saved game's highlights link is actually clicked, remove it 5 minutes later regardless of the 7-day window above
 let savedGames = loadSavedGames(); // array, in custom/drag order
 pruneExpiredSavedGames();
 let savedSortMode = 'gamegravity'; // 'gamegravity' | 'chronological' | 'custom' -- matches the display order of the sort buttons
@@ -2254,6 +2302,69 @@ let savedSortMode = 'gamegravity'; // 'gamegravity' | 'chronological' | 'custom'
 // away for that game -- sorting means the order passed in never
 // matters, only the pair of teams does.
 function gameSaveKey(teamA, teamB){ return [teamA, teamB].sort().join('@'); }
+// One shared, consistently-colored W/L badge (green win, red loss) for
+// anywhere a team's own result is shown -- was previously just plain
+// "W"/"L" text in some views and missing entirely in others.
+function resultBadge(won){ return `<span class="result-badge ${won ? 'win' : 'loss'}">${won ? 'W' : 'L'}</span>`; }
+
+// A downloadable .ics calendar file for a single game -- the
+// universal standard, so it works with any calendar app (Apple,
+// Google, Outlook, etc.), not just one. Built as a data URI so it
+// needs no server round-trip; clicking it just downloads the file.
+function buildIcsDataUri(awayTeam, homeTeam, kickoffUTC, network){
+  if (!kickoffUTC) return null;
+  const start = new Date(kickoffUTC);
+  if (isNaN(start.getTime())) return null;
+  const end = new Date(start.getTime() + 3.5 * 60 * 60 * 1000); // typical game length as a reasonable block
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const escapeIcs = (s) => String(s).replace(/[,;]/g, '\\$&');
+  const title = escapeIcs(`${awayTeam} @ ${homeTeam}`);
+  const desc = escapeIcs(network ? `Watch on ${network}` : 'College football');
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//RootForGuide//EN', 'BEGIN:VEVENT',
+    `UID:${start.getTime()}-${title.replace(/\s/g,'')}@rootforguide.com`,
+    `DTSTAMP:${fmt(new Date())}`, `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
+    `SUMMARY:${title}`, `DESCRIPTION:${desc}`, 'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+  return `data:text/calendar;charset=utf8,${encodeURIComponent(ics)}`;
+}
+const CALENDAR_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+function calendarButtonHtml(awayTeam, homeTeam, kickoffUTC, network){
+  const uri = buildIcsDataUri(awayTeam, homeTeam, kickoffUTC, network);
+  if (!uri) return ''; // no kickoff time (TBA) -- nothing to add yet
+  const filename = `${awayTeam}-vs-${homeTeam}`.replace(/[^a-z0-9-]/gi, '');
+  return ` <a href="${uri}" download="${filename}.ics" class="cal-btn" title="Add to calendar">${CALENDAR_ICON_SVG}</a>`;
+}
+
+const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>';
+// Per-game share, reusing the exact same share/copy mechanism as the
+// team-wide share button (native share sheet, falling back to
+// clipboard), just with a single game's text instead of a full list.
+function shareGameButton(awayTeam, homeTeam, kickoffUTC, network){
+  const text = `${awayTeam} @ ${homeTeam}${kickoffUTC ? ' — ' + formatKickoff(kickoffUTC, homeTeam) : ''}${network ? ' on ' + network : ''}\nrootforguide.com`;
+  const safeText = text.replace(/"/g, '&quot;');
+  return ` <span class="share-game-btn" data-share-text="${safeText}" title="Share this game">${SHARE_ICON_SVG}</span>`;
+}
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('.share-game-btn');
+  if (!btn) return;
+  const text = btn.dataset.shareText;
+  const hasShare = typeof navigator !== 'undefined' && navigator.share;
+  const hasClipboard = typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText;
+  const flashCopied = () => {
+    const original = btn.innerHTML;
+    btn.textContent = '✓';
+    setTimeout(() => { btn.innerHTML = original; }, 1500);
+  };
+  if (hasShare){
+    navigator.share({ title: 'RootForGuide.com', text }).catch((err) => {
+      if (err && err.name === 'AbortError') return;
+      if (hasClipboard) navigator.clipboard.writeText(text).then(flashCopied);
+    });
+    return;
+  }
+  if (hasClipboard) navigator.clipboard.writeText(text).then(flashCopied);
+});
 function isGameSaved(gameKey){ return savedGames.some(g => g.key === gameKey); }
 function toggleSavedGame(gameKey, gameData){
   const idx = savedGames.findIndex(g => g.key === gameKey);
@@ -2275,7 +2386,11 @@ function pruneExpiredSavedGames(){
   // moment this code first runs.
   let touched = false;
   savedGames.forEach(g => { if (!g.savedAt){ g.savedAt = now; touched = true; } });
-  savedGames = savedGames.filter(g => (now - g.savedAt) < SAVED_GAME_TTL_MS);
+  savedGames = savedGames.filter(g => {
+    if ((now - g.savedAt) >= SAVED_GAME_TTL_MS) return false; // 7 days since saving, regardless of clicks
+    if (g.watchedAt && (now - g.watchedAt) >= WATCHED_CLICK_TTL_MS) return false; // 5 minutes since the highlights link was actually clicked
+    return true;
+  });
   if (savedGames.length !== before || touched) persistSavedGames(savedGames);
 }
 // Tracks which highlights/watch links have actually been clicked, so
@@ -2315,6 +2430,22 @@ document.addEventListener('click', (e) => {
   if (!a) return;
   markLinkWatched(a.dataset.link);
   a.classList.add('watched');
+  // If this link belongs to a saved game, start a 5-minute countdown
+  // to auto-remove it from Saved -- on top of the existing 7-day
+  // expiry from when it was originally saved. The assumption is that
+  // clicking through to highlights means the visitor is done with it.
+  const matchingSaved = savedGames.find(g => g.link === a.dataset.link);
+  if (matchingSaved && !matchingSaved.watchedAt){
+    matchingSaved.watchedAt = Date.now();
+    persistSavedGames(savedGames);
+    // If the Saved tab happens to be open right now, make sure the
+    // game actually disappears from view at the 5-minute mark instead
+    // of only being cleaned up the next time the tab is opened.
+    setTimeout(() => {
+      const panel = document.getElementById('panelSaved');
+      if (panel && panel.style.display !== 'none') renderSavedTab();
+    }, WATCHED_CLICK_TTL_MS + 500);
+  }
 });
 const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
@@ -2387,13 +2518,18 @@ function renderSavedTab(){
     const save = saveGameButton(g.key, g);
     const dragHandle = (savedSortMode === 'custom') ? '<span class="drag-handle" title="Drag to reorder">⠿</span> ' : '';
     // Same status badge the Game Gravity view uses ("Likely live now" /
-    // "Likely final -- check for highlights") -- without this, someone
-    // could click a highlights link before the game's even over and
-    // find nothing there yet, with no indication that was expected.
+    // "Likely final") -- without this, someone could click a
+    // highlights link before the game's even over and find nothing
+    // there yet, with no indication that was expected.
     const status = renderStatusBadge(g.kickoffUTC);
+    // Shows the actual Game Gravity score when one was captured (only
+    // games saved from the Game Gravity view have one) -- otherwise
+    // the "Game Gravity" sort mode reorders the list with no visible
+    // number explaining why, which reads as arbitrary.
+    const ggScore = (g.score !== null && g.score !== undefined) ? `<span class="saved-gg-score">${Math.round(g.score)} GG<span class="tm">™</span></span> ` : '';
     row.innerHTML = `
       <span class="matchup-text">${dragHandle}${g.awayRank ? '#' + g.awayRank + ' ' : ''}${g.away} @ ${g.homeRank ? '#' + g.homeRank + ' ' : ''}${g.home}</span>
-      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
+      <span class="game-meta">${ggScore}${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -2440,7 +2576,7 @@ function watchAllSaved(){
 function renderStatusBadge(kickoffUTC){
   const status = gameLiveStatus(kickoffUTC);
   if (status === 'live') return `<span class="status-badge live">🔴 Likely live now</span>`;
-  if (status === 'likely-final') return `<span class="status-badge final">Likely final — check for highlights</span>`;
+  if (status === 'likely-final') return `<span class="status-badge final">Likely final</span>`;
   return '';
 }
 
@@ -2500,7 +2636,7 @@ function renderWatch(r, team, showScores){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">✓</span>
-      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span>${save}
+      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span> ${highlightsLinkHtml(r.link, 'Highlights →')}${save}
     </div>`;
   }
   if (showScores && !hasFinalScore){
@@ -2688,7 +2824,10 @@ function isUpsetGame(g){
   if (g.home_score === null || g.home_score === undefined || g.away_score === null || g.away_score === undefined) return false;
   if (!g.favoredTeam || g.winProb === null || g.winProb === undefined) return false;
   const winner = g.home_score > g.away_score ? g.home : g.away;
-  return winner !== g.favoredTeam && g.winProb >= 0.75; // a real favorite actually lost
+  // ANY real favorite losing counts -- not just a heavy (75%+) one.
+  // winProb > 0.5 is the minimum bar for "there was a real favorite
+  // at all"; anything below that was a toss-up, not an upset.
+  return winner !== g.favoredTeam && g.winProb > 0.5;
 }
 
 // "Last Week" column: ranked-vs-ranked matchups are shown either way
@@ -2732,9 +2871,13 @@ function renderLastWeekColumn(data){
     // "Watch free, spoiler-safe" links); only the score stays gated.
     const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
     const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
+    // Pre-game odds -- no spoiler concern (the line existed before
+    // kickoff), shown regardless of the toggle, same as everywhere
+    // else these appear.
+    const oddsText = g.favoredTeam && g.winProb ? `<span class="odds">${g.favoredTeam} ${Math.round(g.winProb * 100)}% to win</span> ` : '';
     const scorePart = (showScores && hasScore)
-      ? `<span class="game-meta">${g.away_score}-${g.home_score} ${highlightsLink}${save}</span>`
-      : `<span class="game-meta">${peek}${peek ? ' ' : ''}${highlightsLink}${save}</span>`;
+      ? `<span class="game-meta">${oddsText}${g.away_score}-${g.home_score} ${highlightsLink}${save}</span>`
+      : `<span class="game-meta">${oddsText}${peek}${peek ? ' ' : ''}${highlightsLink}${save}</span>`;
     row.innerHTML = `<span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>${scorePart}`;
     list.appendChild(row);
   });
@@ -2766,9 +2909,10 @@ function renderNextWeekColumn(data){
     row.className = 'national-game-row stacked' + (doubleRanked ? ' double-ranked' : '');
     const awayLabel = (g.awayRank ? `#${g.awayRank} ` : '') + g.away;
     const homeLabel = (g.homeRank ? `#${g.homeRank} ` : '') + g.home;
+    const oddsText = g.favoredTeam && g.winProb ? `${g.favoredTeam} ${Math.round(g.winProb * 100)}% to win` : '';
     row.innerHTML = `
       <span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>
-      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}</span>
+      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''}${oddsText ? ` · <span class="odds">${oddsText}</span>` : ''}</span>
     `;
     list.appendChild(row);
   });
@@ -2800,7 +2944,16 @@ function trendCell(trend){
 function gameCell(g, forOpponentLabel, teamName, teamRank){
   if (!g) return '—';
   if (forOpponentLabel === 'last') {
-    const verb = g.result === 'beat' ? 'W' : 'L';
+    // Only the part that actually reveals who won (the W/L badge and
+    // the opponent's name together spell out the result) stays gated
+    // behind the spoiler toggle. The peek button, highlights link,
+    // and save button were all specifically built to work regardless
+    // of the toggle -- they used to get wiped out anyway because the
+    // WHOLE cell was masked from outside this function, which
+    // defeated the point of building them that way in the first place.
+    const resultText = showScores
+      ? `${resultBadge(g.result === 'beat')} vs ${g.opp}`
+      : '<span class="spoiler-mask">•••</span>';
     // No overtime-timing risk to guard here (unlike same-week games) --
     // this is always a PRIOR week's result by definition, so a peek
     // button can show unconditionally once the row itself is real.
@@ -2812,7 +2965,7 @@ function gameCell(g, forOpponentLabel, teamName, teamRank){
     // part of this data, so that side stays unlabeled rather than
     // guessed at.
     const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null, awayRank: teamRank ?? null, homeRank: null });
-    return `${verb} vs ${g.opp}${peek}${highlightsLink}${save}`;
+    return `${resultText}${peek}${highlightsLink}${save}`;
   }
   return `vs ${g.opp}`;
 }
@@ -2868,7 +3021,7 @@ function renderTop25(data){
       <td>${t.school}</td>
       <td>${recordCell(t)}</td>
       <td>${mask(trendCell(t.trend))}</td>
-      <td>${mask(gameCell(t.lastGame, 'last', t.school, t.rank))}</td>
+      <td>${gameCell(t.lastGame, 'last', t.school, t.rank)}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
@@ -2936,9 +3089,36 @@ function renderSchedule(data, team){
     const awayRank = g.home ? (g.oppRank ?? null) : null; // the schedule view only knows the OPPONENT's rank, not this team's own -- the other side stays unlabeled rather than guessed at
     const homeRank = g.home ? null : (g.oppRank ?? null);
     const save = saveGameButton(gameSaveKey(awayTeam, homeTeam), { away:awayTeam, home:homeTeam, kickoffUTC:g.kickoffUTC, link:g.link, network:null, score:null, awayRank, homeRank });
+    // A colored W/L badge for this team's own result, once there is
+    // one -- this used to be missing entirely from the season
+    // schedule. Prior weeks are always safe to reveal outright (same
+    // reasoning as "Last Game" elsewhere); a game from the CURRENT
+    // week that's already finished still respects the spoiler toggle,
+    // falling back to the same hold-to-peek pattern used everywhere
+    // else on the site.
+    const hasScore = g.home_score !== null && g.home_score !== undefined && g.away_score !== null && g.away_score !== undefined;
+    let resultPart = '';
+    if (hasScore){
+      const teamScore = g.home ? g.home_score : g.away_score;
+      const oppScore = g.home ? g.away_score : g.home_score;
+      const won = teamScore > oppScore;
+      if (g.week < WEEK || showScores){
+        resultPart = resultBadge(won) + ' ';
+      } else {
+        resultPart = quickPeekButton(awayTeam, g.away_score, homeTeam, g.home_score, g.kickoffUTC) + ' ';
+      }
+    }
+    // Betting odds -- these are PRE-game info (the line existed before
+    // the game happened), so unlike the result itself, there's no
+    // spoiler concern showing this regardless of week or the toggle.
+    // Same "TeamName XX% to win" format used in the Game Gravity view,
+    // for consistency. Was missing entirely from this view before.
+    const oddsText = g.favoredTeam && g.winProb
+      ? `${g.favoredTeam} ${Math.round(g.winProb * 100)}% to win`
+      : '';
     row.innerHTML = `
-      <span class="matchup-text">${tags}${matchupText}</span>
-      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
+      <span class="matchup-text">${resultPart}${tags}${matchupText}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${oddsText ? `<span class="odds">${oddsText}</span> ` : ''}${highlightsLinkHtml(g.link, 'Highlights →')}${save}${calendarButtonHtml(awayTeam, homeTeam, g.kickoffUTC, g.network)}${shareGameButton(awayTeam, homeTeam, g.kickoffUTC, g.network)}</span>
     `;
     list.appendChild(row);
   });
@@ -2980,17 +3160,20 @@ function renderUpsets(data){
   }
   section.style.display = ''; // always present -- no full-section hide/show based on spoilers, to avoid the rest of the page jumping around
   if (!showScores){
-    list.innerHTML = '<p class="empty-note">Turn on spoilers to see this week\'s upsets.</p>';
+    list.innerHTML = '<p class="empty-note">Turn on spoilers to see upsets.</p>';
     return;
   }
-  const upsets = data.games.filter(g => {
-    if (g.home_score === null || g.home_score === undefined || g.away_score === null || g.away_score === undefined) return false;
-    if (!g.favoredTeam || g.winProb === null || g.winProb === undefined) return false;
-    const winner = g.home_score > g.away_score ? g.home : g.away;
-    return winner !== g.favoredTeam && g.winProb >= 0.75; // a real favorite actually lost
+  // De-duplicated by game_id -- last-week and current-week fetches
+  // could both include the same game right at the boundary.
+  const seen = new Set();
+  const uniqueGames = data.games.filter(g => {
+    if (seen.has(g.game_id)) return false;
+    seen.add(g.game_id);
+    return true;
   });
+  const upsets = uniqueGames.filter(isUpsetGame);
   if (upsets.length === 0){
-    list.innerHTML = '<p class="empty-note">No major upsets last week.</p>';
+    list.innerHTML = '<p class="empty-note">No upsets yet.</p>';
     return;
   }
   list.innerHTML = '';
@@ -3006,6 +3189,7 @@ function renderUpsets(data){
 }
 
 let _lastWeekData = null;
+let _currentWeekData = null;
 let _lastLastNextKey = null;
 async function refreshLastNextWeek(){
   const section = document.getElementById('lastNextSection');
@@ -3015,21 +3199,32 @@ async function refreshLastNextWeek(){
     _lastLastNextKey = key;
     try {
       const prevWeek = WEEK - 1;
-      const [lastData, nextData] = await Promise.all([
+      const [lastData, currentWeekData, nextData] = await Promise.all([
         prevWeek >= 0 ? fetchNationalRankedGames(selectedSeason, prevWeek) : Promise.resolve({ games: [] }),
+        fetchNationalRankedGames(selectedSeason, WEEK), // needed so an upset that already finished THIS week (not just last week) shows up without waiting for the week to roll over
         fetchNationalRankedGames(selectedSeason, WEEK + 1)
       ]);
       if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
       _lastWeekData = lastData;
+      _currentWeekData = currentWeekData;
       section.style.display = '';
       renderLastWeekColumn(lastData);
       renderNextWeekColumn(nextData);
     } catch (err) {
       section.style.display = 'none';
       _lastWeekData = null;
+      _currentWeekData = null;
     }
   }
-  renderUpsets(_lastWeekData);
+  // Upsets can come from last week OR from this week's games that have
+  // already finished (a Thursday-night upset shouldn't have to wait
+  // until next week to show up) -- combined here rather than only
+  // ever looking at last week's data.
+  const combinedGames = [
+    ...((_lastWeekData && _lastWeekData.games) || []),
+    ...((_currentWeekData && _currentWeekData.games) || [])
+  ];
+  renderUpsets({ games: combinedGames });
 }
 
 async function render(){
