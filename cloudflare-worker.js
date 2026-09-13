@@ -462,7 +462,10 @@ if (!team && mode === "currentweek") {
       if (cwCached) return cwCached;
 
       try {
-        const calendar = await cfbdFetch(env, "/calendar", { year });
+        const [calendar, rankingsRaw] = await Promise.all([
+          cfbdFetch(env, "/calendar", { year }),
+          cfbdFetch(env, "/rankings", { year, seasonType: "regular" })
+        ]);
         const now = new Date();
         const regularWeeks = calendar
           .filter(w => w.seasonType === "regular")
@@ -480,7 +483,21 @@ if (!team && mode === "currentweek") {
           if (passed.length) currentWeek = passed[passed.length - 1].week;
         }
 
-        const cwBody = JSON.stringify({ year, week: currentWeek });
+        // The calendar's week boundary (above) is about when GAMES
+        // are played -- it does not know when the AP or CFP committee
+        // actually PUBLISHES a new poll, which happens on its own
+        // schedule (Sundays/Tuesdays) and can lag behind or lead the
+        // game-week boundary. For anything ranking-dependent (the Top
+        // 25 table, trends, "this week's poll"), what should actually
+        // decide "current week" is whichever poll has really been
+        // published -- found here directly from the rankings data
+        // itself, not guessed from a date range.
+        const publishedWeeks = rankingsRaw
+          .filter(w => w.polls && w.polls.length)
+          .map(w => w.week);
+        const pollWeek = publishedWeeks.length ? Math.max(...publishedWeeks) : currentWeek;
+
+        const cwBody = JSON.stringify({ year, week: currentWeek, pollWeek });
         // Cached for 1 hour, not 24 -- this one genuinely changes as
         // the days pass, unlike the per-week data which is stable
         // for the whole week once computed.
@@ -553,12 +570,19 @@ if (!team && mode === "currentweek") {
             lastGame = { opp, result: teamScore > oppScore ? "beat" : "lost_to", teamScore, oppScore, link: watchLink(isHome ? school : opp, isHome ? opp : school, year) };
           }
 
-          // Targets week+1 specifically -- matching exactly what the
-          // "Next Week" schedule section shows below, rather than
-          // picking up the CURRENT week's still-unplayed game (which
-          // made the two sections visibly disagree with each other).
+          // Shows the CURRENT week's game as "next" -- i.e. the one
+          // still upcoming or in progress right now, not next week's.
+          // This used to add +1 here (to intentionally match a
+          // *different*, deliberately-one-week-ahead "Next Week"
+          // preview section elsewhere on the site), but that reasoning
+          // didn't hold: this column sits right next to "Last" (the
+          // most recently COMPLETED game), so a user reading them
+          // side by side expects "Next" to mean the very next game
+          // after that -- this week's, not the one after. Confirmed
+          // as a real bug: Texas plays Ohio State this week and UTSA
+          // next week, and this was showing UTSA.
           const upcoming = teamGames
-            .filter(g => g.week === week + 1)
+            .filter(g => g.week === week)
             .sort((a, b) => a.week - b.week);
           let nextGame = null;
           if (upcoming.length) {

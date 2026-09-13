@@ -752,6 +752,8 @@
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:var(--amber); }
+  .highlights-link.watched{ color:var(--chalk-dim); opacity:0.75; }
+  .highlights-link.watched::before{ content:"✓ "; color:#4ade80; }
   .saved-controls{
     display:flex;
     justify-content:space-between;
@@ -1076,9 +1078,9 @@
     <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
     <div class="saved-controls">
       <div class="saved-sort-group">
-        <button class="saved-sort-btn active" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
+        <button class="saved-sort-btn active" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity</button>
         <button class="saved-sort-btn" data-sort="chronological" onclick="setSavedSortMode('chronological')">Chronological</button>
-        <button class="saved-sort-btn" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity</button>
+        <button class="saved-sort-btn" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
       </div>
       <button class="watch-all-btn" onclick="watchAllSaved()">Watch all highlights →</button>
     </div>
@@ -1213,6 +1215,7 @@
 
 const YEAR = 2026;
 let WEEK = 1; // starting placeholder -- corrected to the real current week right after page load, via fetchCurrentWeek() below
+let POLL_WEEK = 1; // separate from WEEK -- tracks whichever week's poll has actually been PUBLISHED, which can lag or lead the game-week boundary (AP/CFP publish on their own schedule, not tied to game days). Used specifically for the Rankings table, so it shifts exactly when a new poll goes up, not before.
 
 // Determines the real current week from the Worker's own calendar
 // lookup, comparing today's actual date against real week boundaries
@@ -1224,7 +1227,7 @@ async function fetchCurrentWeek(year){
   if (!res.ok) throw new Error(`Worker responded ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  return data.week;
+  return { week: data.week, pollWeek: data.pollWeek };
 }
 
 // Week 0 (Aug 28–29) already happened before Week 1 kicks off. Only
@@ -2234,15 +2237,85 @@ function loadSavedGames(){
 function persistSavedGames(games){
   try { localStorage.setItem('cg_saved_games', JSON.stringify(games)); } catch(e){}
 }
+const SAVED_GAME_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 let savedGames = loadSavedGames(); // array, in custom/drag order
-let savedSortMode = 'custom'; // 'custom' | 'chronological' | 'gamegravity'
+pruneExpiredSavedGames();
+let savedSortMode = 'gamegravity'; // 'gamegravity' | 'chronological' | 'custom' -- matches the display order of the sort buttons
+// One canonical key format for a game, used everywhere a save button
+// appears -- team names only, not kickoff time, so the exact same
+// real-world game always produces the exact same key regardless of
+// which view saved it (some views, like the table's "last game"
+// cell, don't have a kickoff time to include at all). This used to
+// differ between views (one used a real timestamp, another used a
+// static "@last" placeholder), which meant saving the same game from
+// two different views showed as two separate, inconsistent entries.
+// Sorted alphabetically rather than by literal away/home order, since
+// not every call site actually knows which team was truly home vs
+// away for that game -- sorting means the order passed in never
+// matters, only the pair of teams does.
+function gameSaveKey(teamA, teamB){ return [teamA, teamB].sort().join('@'); }
 function isGameSaved(gameKey){ return savedGames.some(g => g.key === gameKey); }
 function toggleSavedGame(gameKey, gameData){
   const idx = savedGames.findIndex(g => g.key === gameKey);
   if (idx !== -1) savedGames.splice(idx, 1);
-  else savedGames.push({ key: gameKey, ...gameData });
+  else savedGames.push({ key: gameKey, ...gameData, savedAt: Date.now() });
   persistSavedGames(savedGames);
 }
+// Drops entries older than 7 days from when they were saved (not
+// from kickoff -- some saves, like ones from the table view, don't
+// carry a kickoff time at all, so save-time is the one anchor every
+// entry always has). Runs once on load and again each time the tab
+// renders, so nothing lingers past a week even across visits.
+function pruneExpiredSavedGames(){
+  const now = Date.now();
+  const before = savedGames.length;
+  // Any entry saved before this feature existed won't have a
+  // savedAt yet -- grandfather those in with a fresh clock starting
+  // now, rather than wiping out someone's existing saved list the
+  // moment this code first runs.
+  let touched = false;
+  savedGames.forEach(g => { if (!g.savedAt){ g.savedAt = now; touched = true; } });
+  savedGames = savedGames.filter(g => (now - g.savedAt) < SAVED_GAME_TTL_MS);
+  if (savedGames.length !== before || touched) persistSavedGames(savedGames);
+}
+// Tracks which highlights/watch links have actually been clicked, so
+// a visitor can visually tell what they've already seen versus what's
+// still new -- keyed by the link URL itself, since that's already
+// available at every single spot a link gets rendered without
+// needing any extra team/game context threaded through.
+function loadWatchedLinks(){
+  try {
+    const raw = localStorage.getItem('cg_watched_links');
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch(e){ return new Set(); }
+}
+function persistWatchedLinks(set){
+  try { localStorage.setItem('cg_watched_links', JSON.stringify(Array.from(set))); } catch(e){}
+}
+let watchedLinks = loadWatchedLinks();
+function isLinkWatched(link){ return !!link && watchedLinks.has(link); }
+function markLinkWatched(link){
+  if (!link || watchedLinks.has(link)) return;
+  watchedLinks.add(link);
+  persistWatchedLinks(watchedLinks);
+}
+// One shared builder for every highlights/watch link on the site, so
+// the "already watched" treatment (and the link markup itself) stays
+// visually consistent everywhere rather than each view rolling its
+// own slightly different version.
+function highlightsLinkHtml(link, label){
+  if (!link) return '';
+  const safeLink = link.replace(/"/g, '&quot;');
+  const watched = isLinkWatched(link);
+  return ` <a href="${safeLink}" target="_blank" rel="noopener" class="highlights-link${watched ? ' watched' : ''}" data-link="${safeLink}">${label}</a>`;
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('.highlights-link');
+  if (!a) return;
+  markLinkWatched(a.dataset.link);
+  a.classList.add('watched');
+});
 const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function saveGameButton(gameKey, gameData){
@@ -2293,6 +2366,7 @@ function sortedSavedGames(){
 }
 let dragFromKey = null;
 function renderSavedTab(){
+  pruneExpiredSavedGames();
   const list = document.getElementById('savedGamesList');
   if (!list) return;
   document.querySelectorAll('.saved-sort-btn').forEach(btn => {
@@ -2309,12 +2383,17 @@ function renderSavedTab(){
     row.className = 'national-game-row stacked saved-row';
     row.draggable = (savedSortMode === 'custom');
     row.dataset.key = g.key;
-    const highlightsLink = g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
+    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
     const save = saveGameButton(g.key, g);
     const dragHandle = (savedSortMode === 'custom') ? '<span class="drag-handle" title="Drag to reorder">⠿</span> ' : '';
+    // Same status badge the Game Gravity view uses ("Likely live now" /
+    // "Likely final -- check for highlights") -- without this, someone
+    // could click a highlights link before the game's even over and
+    // find nothing there yet, with no indication that was expected.
+    const status = renderStatusBadge(g.kickoffUTC);
     row.innerHTML = `
-      <span class="matchup-text">${dragHandle}${g.away} @ ${g.home}</span>
-      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${highlightsLink}${save}</span>
+      <span class="matchup-text">${dragHandle}${g.awayRank ? '#' + g.awayRank + ' ' : ''}${g.away} @ ${g.homeRank ? '#' + g.homeRank + ' ' : ''}${g.home}</span>
+      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -2414,8 +2493,8 @@ function renderWatch(r, team, showScores){
   const postTime = formatPostTime(r.kickoffUTC, r.network, team);
   const hasFinalScore = r.home_score !== null && r.away_score !== null;
   const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)} · ${r.network} ${renderStatusBadge(r.kickoffUTC)}</div>`;
-  const gameKey = `${r.away}@${r.home}@${r.kickoffUTC}`;
-  const save = saveGameButton(gameKey, { away:r.away, home:r.home, kickoffUTC:r.kickoffUTC, link:r.link, network:r.network, score:r.score ?? null });
+  const gameKey = gameSaveKey(r.away, r.home);
+  const save = saveGameButton(gameKey, { away:r.away, home:r.home, kickoffUTC:r.kickoffUTC, link:r.link, network:r.network, score:r.score ?? null, awayRank:r.awayRank ?? null, homeRank:r.homeRank ?? null });
 
   if (showScores && hasFinalScore){
     return `${kickoffLine}
@@ -2428,13 +2507,13 @@ function renderWatch(r, team, showScores){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">▶</span>
-      <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
+      <span class="watch-text">${highlightsLinkHtml(r.link, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
     </div>`;
   }
   return `${kickoffLine}
   <div class="watch-row">
     <span class="watch-icon">▶</span>
-    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
+    <span class="watch-text">${highlightsLinkHtml(r.link, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
   </div>`;
 }
 
@@ -2651,19 +2730,21 @@ function renderLastWeekColumn(data){
     // Highlights link shown regardless of the spoiler toggle -- the
     // link itself reveals nothing (same rule as the Game Gravity
     // "Watch free, spoiler-safe" links); only the score stays gated.
-    const highlightsLink = g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
+    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
+    const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     const scorePart = (showScores && hasScore)
-      ? `<span class="game-meta">${g.away_score}-${g.home_score} ${highlightsLink}</span>`
-      : `<span class="game-meta">${peek}${peek ? ' ' : ''}${highlightsLink}</span>`;
+      ? `<span class="game-meta">${g.away_score}-${g.home_score} ${highlightsLink}${save}</span>`
+      : `<span class="game-meta">${peek}${peek ? ' ' : ''}${highlightsLink}${save}</span>`;
     row.innerHTML = `<span class="matchup-text">${doubleRanked ? '<span class="game-tag ranked">Ranked Matchup</span>' : ''}${awayLabel} @ ${homeLabel}</span>${scorePart}`;
     list.appendChild(row);
   });
   upsetGames.forEach(g => {
     const row = document.createElement('div');
     row.className = 'national-game-row stacked';
+    const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     row.innerHTML = `
       <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
-      <a class="game-meta" href="${g.link}" target="_blank" rel="noopener">Highlights →</a>
+      <span class="game-meta">${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -2716,7 +2797,7 @@ function trendCell(trend){
   return `<span class="${cls}">${arrow}${trend.delta}</span>`;
 }
 
-function gameCell(g, forOpponentLabel, teamName){
+function gameCell(g, forOpponentLabel, teamName, teamRank){
   if (!g) return '—';
   if (forOpponentLabel === 'last') {
     const verb = g.result === 'beat' ? 'W' : 'L';
@@ -2724,9 +2805,13 @@ function gameCell(g, forOpponentLabel, teamName){
     // this is always a PRIOR week's result by definition, so a peek
     // button can show unconditionally once the row itself is real.
     const peek = quickPeekButton(teamName, g.teamScore, g.opp, g.oppScore, 'skip-check');
-    const highlightsLink = g.link ? ` <a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
-    const gameKey = `${teamName}@${g.opp}@last`;
-    const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null });
+    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
+    const gameKey = gameSaveKey(teamName, g.opp);
+    // Only this team's own rank is known here (it's the Top 25 row
+    // we're already rendering) -- the prior opponent's rank isn't
+    // part of this data, so that side stays unlabeled rather than
+    // guessed at.
+    const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null, awayRank: teamRank ?? null, homeRank: null });
     return `${verb} vs ${g.opp}${peek}${highlightsLink}${save}`;
   }
   return `vs ${g.opp}`;
@@ -2739,7 +2824,16 @@ function renderTop25(data){
     return;
   }
   section.style.display = '';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}`;
+  // Communicates when the ranking data is genuinely from a different
+  // week than the games currently being played -- this happens
+  // naturally right after a new week's games start but before that
+  // week's AP/CFP poll has actually been published yet (polls run on
+  // their own schedule, not tied to game days). Without this note, a
+  // visitor mid-week could easily mistake "not updated yet" for "the
+  // site is wrong." The week selector above already lets anyone pick
+  // a specific week manually if they want a different one regardless.
+  const pollLagNote = (POLL_WEEK !== WEEK) ? ` — this is the Week ${POLL_WEEK} poll; Week ${WEEK}'s hasn't been published yet` : '';
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
   const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
@@ -2774,7 +2868,7 @@ function renderTop25(data){
       <td>${t.school}</td>
       <td>${recordCell(t)}</td>
       <td>${mask(trendCell(t.trend))}</td>
-      <td>${mask(gameCell(t.lastGame, 'last', t.school))}</td>
+      <td>${mask(gameCell(t.lastGame, 'last', t.school, t.rank))}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
@@ -2789,12 +2883,12 @@ async function refreshTop25(){
   const section = document.getElementById('top25Section');
   if (!useLiveData){ section.style.display = 'none'; _lastTop25Key = null; _lastTop25Data = null; return; }
   section.style.display = ''; // always present once live data works -- spoilers only mask specific cells below, not the whole section
-  const key = `${selectedSeason}-${WEEK}`;
+  const key = `${selectedSeason}-${POLL_WEEK}`;
   if (key !== _lastTop25Key) {
     _lastTop25Key = key;
     try {
-      const data = await fetchTop25(selectedSeason, WEEK);
-      if (key !== `${selectedSeason}-${WEEK}`) return; // stale by the time it resolved
+      const data = await fetchTop25(selectedSeason, POLL_WEEK);
+      if (key !== `${selectedSeason}-${POLL_WEEK}`) return; // stale by the time it resolved
       _lastTop25Data = data;
     } catch (err) {
       section.style.display = 'none';
@@ -2837,9 +2931,14 @@ function renderSchedule(data, team){
     if (g.oppRank) tags += '<span class="game-tag ranked">Ranked</span>';
     if (g.isRivalry) tags += '<span class="game-tag rivalry">Rivalry</span>';
     if (g.isCloseGame) tags += '<span class="game-tag close">Close Game</span>';
+    const awayTeam = g.home ? g.opp : team;
+    const homeTeam = g.home ? team : g.opp;
+    const awayRank = g.home ? (g.oppRank ?? null) : null; // the schedule view only knows the OPPONENT's rank, not this team's own -- the other side stays unlabeled rather than guessed at
+    const homeRank = g.home ? null : (g.oppRank ?? null);
+    const save = saveGameButton(gameSaveKey(awayTeam, homeTeam), { away:awayTeam, home:homeTeam, kickoffUTC:g.kickoffUTC, link:g.link, network:null, score:null, awayRank, homeRank });
     row.innerHTML = `
       <span class="matchup-text">${tags}${matchupText}</span>
-      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : ''}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -3189,7 +3288,8 @@ runIntroAnimation(() => {
 
   // Correct the placeholder Week 1 default to the real current week,
   // once we know it -- doesn't block the initial page paint above.
-  fetchCurrentWeek(selectedSeason).then(realWeek => {
+  fetchCurrentWeek(selectedSeason).then(({ week: realWeek, pollWeek: realPollWeek }) => {
+    POLL_WEEK = (realPollWeek === null || realPollWeek === undefined) ? realWeek : realPollWeek;
     if (realWeek === null || realWeek === undefined || realWeek === WEEK) return;
     WEEK = realWeek;
     weekSelect.value = WEEK;
