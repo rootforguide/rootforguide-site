@@ -3015,13 +3015,27 @@ function gameCell(g, forOpponentLabel, teamName, teamRank){
   return `vs ${g.opp}`;
 }
 
-function renderTop25(data){
+function renderTop25(data, isPriorSnapshot){
   const section = document.getElementById('top25Section');
   if (!data || !data.top25 || data.top25.length === 0){
     section.style.display = 'none';
     return;
   }
   section.style.display = '';
+  // A prior-week snapshot is a WHOLE separate dataset fetched
+  // specifically because it's genuinely a week old -- safe to reveal
+  // in full (real rank, Colley, record, trend, last/next game), not
+  // just "•••" in every cell. This used to mask individual cells of
+  // THIS week's data instead, which left the pre-spoiler table almost
+  // entirely blank and not useful for anything. showScores still
+  // governs the normal case (current data, spoilers genuinely on/off).
+  const effectiveReveal = isPriorSnapshot || showScores;
+  // Temporarily aligns showScores with what THIS render should
+  // actually reveal, since gameCell()'s own masking logic reads the
+  // global directly -- restored right after, synchronously, before
+  // anything else can observe the change.
+  const realShowScores = showScores;
+  showScores = effectiveReveal;
   // Communicates when the ranking data is genuinely from a different
   // week than the games currently being played -- this happens
   // naturally right after a new week's games start but before that
@@ -3031,37 +3045,27 @@ function renderTop25(data){
   // site is wrong." The week selector above already lets anyone pick
   // a specific week manually if they want a different one regardless.
   const pollLagNote = (POLL_WEEK !== WEEK) ? ` — this is the Week ${POLL_WEEK} poll; Week ${WEEK}'s hasn't been published yet` : '';
-  // The rank POSITION itself is a spoiler, not just the labels inside
-  // each row -- Texas jumping to #1 makes it obvious they won
-  // yesterday, even with every other cell still masked. Pre-spoiler,
-  // the table shows LAST week's order and rank numbers instead of
-  // this week's, using each team's prevRank -- not the updated rank
-  // the poll just gave them. A team with no prevRank (brand new to
-  // the poll this week) is left out of the pre-spoiler view entirely,
-  // since their very presence would announce they had a big week.
-  const spoilerNote = showScores ? '' : ' — showing last week\'s rankings until spoilers are on';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}${spoilerNote}`;
+  const snapshotNote = isPriorSnapshot ? ` — showing Week ${data.week}'s full snapshot; turn on spoilers for this week's real update` : '';
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${effectiveReveal ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}${snapshotNote}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
-  const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
+  const mask = (content) => effectiveReveal ? content : '<span class="spoiler-mask">•••</span>';
   // Pre-spoiler, show the record as it stood BEFORE last week's game
   // (computed by backing that one result out), not the fully
   // up-to-date record -- the current record would directly reveal
   // whether that game was a win or a loss. Once spoilers are on, the
   // real, current record shows instead.
   const recordCell = (t) => {
-    if (showScores || !t.lastGame) return `${t.wins}-${t.losses}`;
+    if (effectiveReveal || !t.lastGame) return `${t.wins}-${t.losses}`;
     const priorWins = t.wins - (t.lastGame.result === 'beat' ? 1 : 0);
     const priorLosses = t.losses - (t.lastGame.result === 'lost_to' ? 1 : 0);
     return `<span title="Entering last week's game — not yet updated">${priorWins}-${priorLosses}<sup class="record-note">†</sup></span>`;
   };
-  const displayList = showScores
-    ? data.top25
-    : data.top25
-        .filter(t => t.prevRank !== null && t.prevRank !== undefined)
-        .map(t => ({ ...t, displayRank: t.prevRank }))
-        .sort((a, b) => a.displayRank - b.displayRank);
-  if (showScores) displayList.forEach(t => { t.displayRank = t.rank; });
+  // Each dataset's OWN rank field is used directly now -- when this is
+  // a prior-week snapshot, that's already last week's real order, and
+  // a team not yet ranked back then simply isn't in this response at
+  // all (no separate reordering/filtering needed anymore).
+  const displayList = data.top25.map(t => ({ ...t, displayRank: t.rank }));
   // Visual dividers for the 12-team CFP structure: top 4 seeds get a
   // first-round bye, and the field itself cuts off at 12 -- this is a
   // simplified visual approximation (the real selection isn't a strict
@@ -3089,28 +3093,46 @@ function renderTop25(data){
     if (t.displayRank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
     if (t.displayRank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
   });
+  showScores = realShowScores; // restore the real global state
 }
 
 let _lastTop25Key = null;
 let _lastTop25Data = null;
+let _priorTop25Data = null;
 async function refreshTop25(){
   const section = document.getElementById('top25Section');
-  if (!useLiveData){ section.style.display = 'none'; _lastTop25Key = null; _lastTop25Data = null; return; }
-  section.style.display = ''; // always present once live data works -- spoilers only mask specific cells below, not the whole section
+  if (!useLiveData){ section.style.display = 'none'; _lastTop25Key = null; _lastTop25Data = null; _priorTop25Data = null; return; }
+  section.style.display = '';
   const key = `${selectedSeason}-${POLL_WEEK}`;
   if (key !== _lastTop25Key) {
-    _lastTop25Key = key;
     try {
-      const data = await fetchTop25(selectedSeason, POLL_WEEK);
+      // Fetches BOTH this week's poll AND last week's, rather than
+      // one dataset with individual cells masked -- pre-spoiler now
+      // shows last week's ENTIRE snapshot in full (rank, Colley,
+      // record, trend, last/next game, all real and unmasked), not a
+      // half-visible table of "•••" placeholders. It's genuinely safe
+      // to show in full since it's a week old, and a team that wasn't
+      // ranked yet last week simply isn't in that response at all --
+      // no separate "exclude newly-ranked teams" logic needed.
+      const [data, priorData] = await Promise.all([
+        fetchTop25(selectedSeason, POLL_WEEK),
+        POLL_WEEK > 0 ? fetchTop25(selectedSeason, POLL_WEEK - 1).catch(() => null) : Promise.resolve(null)
+      ]);
       if (key !== `${selectedSeason}-${POLL_WEEK}`) return; // stale by the time it resolved
+      _lastTop25Key = key; // only cache the key once the fetch genuinely succeeded
       _lastTop25Data = data;
+      _priorTop25Data = priorData;
     } catch (err) {
       section.style.display = 'none';
       _lastTop25Data = null;
+      _priorTop25Data = null;
       return;
     }
   }
-  renderTop25(_lastTop25Data); // re-render every time -- masking depends on showScores, which can change without a new fetch
+  // Re-render every time -- which dataset gets shown depends on
+  // showScores, which can change without a new fetch.
+  const dataToShow = (!showScores && _priorTop25Data && _priorTop25Data.top25 && _priorTop25Data.top25.length) ? _priorTop25Data : _lastTop25Data;
+  renderTop25(dataToShow, !showScores && dataToShow === _priorTop25Data);
 }
 
 // Full team schedule — every game for the season, with ranked
