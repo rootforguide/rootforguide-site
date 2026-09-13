@@ -255,7 +255,7 @@
     margin-left:1px;
   }
   .site-why{
-    margin:16px 0 0;
+    margin:18px 0 0;
     font-family:'Big Shoulders Display', sans-serif;
     font-weight:700;
     font-size:24px;
@@ -264,17 +264,27 @@
     max-width:44ch;
   }
   .tagline{
-    margin:12px 0 0;
-    font-size:18px;
+    margin:14px 0 0;
+    font-size:15px;
     color:var(--chalk-dim);
+    opacity:0.85;
     max-width:46ch;
   }
-  .tagline-sub{
-    margin:6px 0 0;
-    font-size:14px;
+  .feature-pills{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:14px 0 0;
+  }
+  .feature-pill{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.2px;
     color:var(--chalk-dim);
-    opacity:0.75;
-    max-width:46ch;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    padding:5px 12px;
   }
 
   .site-settings{
@@ -970,29 +980,6 @@
   .game-tag.close{ background:#3b82f6; color:#fff; }
   .game-tag.ranked{ background:var(--amber); color:var(--field); }
 
-  .view-toggle-row{
-    display:inline-flex;
-    border:1px solid var(--panel-line);
-    border-radius:20px;
-    overflow:hidden;
-    margin-bottom:18px;
-  }
-  .view-toggle-btn{
-    font-family:'Source Sans 3', sans-serif;
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.2px;
-    padding:8px 16px;
-    border:none;
-    background:var(--panel);
-    color:var(--chalk-dim);
-    cursor:pointer;
-  }
-  .view-toggle-btn.active{
-    background:var(--amber);
-    color:var(--field);
-  }
-
   .step-indicator{
     display:flex;
     align-items:center;
@@ -1042,9 +1029,25 @@
   .step-arrow{ color:var(--panel-line); font-size:14px; }
   .tab-nav{
     display:flex;
+    flex-wrap:wrap;
     gap:8px;
     margin:20px 0 24px;
     border-bottom:1px solid var(--panel-line);
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--field);
+    padding-top:8px;
+  }
+  .tab-nav-step-label{
+    display:block;
+    width:100%;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin-bottom:2px;
   }
   .tab-btn{
     font-family:'Big Shoulders Display', sans-serif;
@@ -1194,8 +1197,12 @@
       </div>
     </div>
     <p class="site-why">We believe sports should be enjoyed without subscriptions, without ads between plays, without spoilers — and only the games that actually matter to you.</p>
-    <p class="tagline">The spoiler-free, data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
-    <p class="tagline-sub">100% free, with direct links to every game's extended highlights.</p>
+    <p class="tagline">The data-driven guide to what actually matters for your team each week — powered by Game Gravity<span class="tm">™</span>.</p>
+    <div class="feature-pills">
+      <span class="feature-pill">Spoiler-Free</span>
+      <span class="feature-pill">100% Free</span>
+      <span class="feature-pill">Direct Highlights Links</span>
+    </div>
 
     <div class="ad-mobile-banner">
       <span class="ad-label">Advertisement</span>
@@ -1224,11 +1231,12 @@
   <div class="step-indicator" id="stepIndicator"></div>
 
   <div class="tab-nav" id="tabNav">
+    <span class="tab-nav-step-label" id="tabNavStepLabel"></span>
     <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
     <button class="tab-btn" data-tab="rankings">Rankings</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
-    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved — Watch →</button>
+    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved — Spoiler-Free →</button>
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
@@ -1319,11 +1327,6 @@
 
   <div class="team-snapshot" id="teamSnapshot"></div>
 
-  <div class="view-toggle-row" id="viewToggleRow" style="display:none;">
-    <button class="view-toggle-btn active" id="btnViewPath" data-view="path">Your Path</button>
-    <button class="view-toggle-btn" id="btnViewWatch" data-view="watch">What to Watch</button>
-  </div>
-
   <div id="results"></div>
   <button class="share-cta" id="shareCta"></button>
   <p class="share-note-bottom" id="shareNoteBottom"></p>
@@ -1338,9 +1341,6 @@
 
     <p class="field-label" style="margin-top:20px;">Team</p>
     <select id="teamSelect"></select>
-
-    <p class="field-label" style="margin-top:20px;">Season</p>
-    <select id="seasonSelect"></select>
   </div>
   </div>
 
@@ -2173,11 +2173,11 @@ function scoreWeek(team){
 const conferenceSelect = document.getElementById('conferenceSelect');
 const teamSelect = document.getElementById('teamSelect');
 const weekSelect = document.getElementById('weekSelect');
-const seasonSelect = document.getElementById('seasonSelect');
 
-// Season picker — 7 years back, matching the request. Only the BYU
-// 2025 pilot has real data; the rest are visible-but-disabled, same
-// pattern as the week picker below.
+// This season only -- no season picker anymore, so this is just a
+// fixed constant now rather than something the user can change. Kept
+// as a variable (not inlined everywhere) since the rest of the file
+// still references it by name for every API call.
 let selectedSeason = '2026';
 // LIVE DATA — the Worker (rootforguide-data.hbyf5dp6jh.workers.dev)
 // is confirmed working with a real API key as of this build. Every
@@ -2186,28 +2186,6 @@ let selectedSeason = '2026';
 // real data is strictly better than a manually researched stand-in.
 const WORKER_URL = 'https://rootforguide-api.hbyf5dp6jh.workers.dev';
 let useLiveData = true; // easy kill-switch if the Worker ever needs to be bypassed
-
-const SEASON_OPTIONS = [
-  { value:'2026', label:'2026 (current)', enabled:true },
-  { value:'2025', label:'2025', enabled:true },
-  { value:'2024', label:'2024', enabled:true },
-  { value:'2023', label:'2023', enabled:true },
-  { value:'2022', label:'2022', enabled:true },
-  { value:'2021', label:'2021', enabled:true },
-  { value:'2020', label:'2020', enabled:true },
-  { value:'2019', label:'2019', enabled:true }
-];
-SEASON_OPTIONS.forEach(s => {
-  const opt = document.createElement('option');
-  opt.value = s.value; opt.textContent = s.label; opt.disabled = !s.enabled;
-  seasonSelect.appendChild(opt);
-});
-seasonSelect.value = selectedSeason;
-seasonSelect.addEventListener('change', () => {
-  selectedSeason = seasonSelect.value;
-  populateWeekSelectForLive();
-  render();
-});
 
 CONFERENCE_NAMES.forEach(c => {
   const opt = document.createElement('option');
@@ -2341,24 +2319,6 @@ spoilerToggle.addEventListener('change', () => {
   render();
 });
 
-// "Your Path" (the existing Game Gravity playoff-relevance order,
-// unchanged) vs "What to Watch" (the same games, reordered toward
-// upsets and close finishes -- only meaningful once real scores are
-// in, so it quietly falls back to the normal order pre-game).
-let resultsViewMode = 'path';
-document.getElementById('btnViewPath').addEventListener('click', () => {
-  resultsViewMode = 'path';
-  document.getElementById('btnViewPath').classList.add('active');
-  document.getElementById('btnViewWatch').classList.remove('active');
-  render();
-});
-document.getElementById('btnViewWatch').addEventListener('click', () => {
-  resultsViewMode = 'watch';
-  document.getElementById('btnViewWatch').classList.add('active');
-  document.getElementById('btnViewPath').classList.remove('active');
-  render();
-});
-
 // Tab nav -- Game Gravity, Rankings, Schedule. Game Gravity is the
 // core feature and stays the default/active tab on load; the other
 // two are simple show/hide panels, not re-fetches, so switching is
@@ -2382,7 +2342,7 @@ function renderStepIndicator(){
   const steps = [
     { label: 'Pick Your Team', done: step1Done, active: !step1Done },
     { label: 'Pick Your Games', done: step3Done, active: step1Done && !step3Done },
-    { label: 'Watch Highlights', done: step3Done, active: step3Done }
+    { label: 'Spoiler-Free Highlights', done: step3Done, active: step3Done }
   ];
   el.innerHTML = steps.map((s, i) => {
     const cls = s.done ? 'done' : (s.active ? 'active' : '');
@@ -2390,6 +2350,13 @@ function renderStepIndicator(){
     const arrow = i < steps.length - 1 ? '<span class="step-arrow">→</span>' : '';
     return `<div class="step-item ${cls}"><span class="step-num">${num}</span><span class="step-label">${s.label}</span></div>${arrow}`;
   }).join('');
+  // Same progress kept visible in the sticky tab bar itself, so
+  // scrolling past the full step indicator above doesn't mean losing
+  // track of which step you're actually on.
+  const stickyLabel = document.getElementById('tabNavStepLabel');
+  if (stickyLabel){
+    stickyLabel.textContent = step3Done ? 'Step 3: Spoiler-Free Highlights' : (step1Done ? 'Step 2: Pick Your Games' : '');
+  }
 }
 // Marks step 3 the moment any highlights link is actually clicked,
 // then updates the indicator immediately so it visibly advances.
@@ -2433,26 +2400,6 @@ document.addEventListener('click', (e) => {
 document.getElementById('colleyInfoIcon').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') document.getElementById('colleyInfoIcon').click();
 });
-function watchabilityOrder(results){
-  if (!showScores) return results; // no scores yet -- nothing to reorder toward
-  return results.slice().sort((a, b) => {
-    const scoreOf = (r) => {
-      if (r.home_score === null || r.home_score === undefined || r.away_score === null || r.away_score === undefined) return -1;
-      const margin = Math.abs(r.home_score - r.away_score);
-      let watch = 0;
-      if (margin <= 3) watch += 50;
-      else if (margin <= 8) watch += 30;
-      else if (margin <= 14) watch += 10;
-      const winner = r.home_score > r.away_score ? r.home : r.away;
-      if (r.favoredTeam && winner !== r.favoredTeam && r.winProb >= 0.7) watch += 60;
-      else if (r.favoredTeam && winner !== r.favoredTeam && r.winProb >= 0.55) watch += 25;
-      if (r.homeRank || r.awayRank) watch += 10;
-      return watch;
-    };
-    return scoreOf(b) - scoreOf(a);
-  });
-}
-
 // HARD RULE, not just current behavior — read before "improving" this:
 // this status is computed from ONE flat, fixed duration (3.5 hrs)
 // applied identically to every game, with zero awareness of what's
@@ -3548,13 +3495,10 @@ async function render(){
         container.innerHTML = '<p class="empty-note">No games with meaningful impact found for this week.</p>';
         return;
       }
-      document.getElementById('viewToggleRow').style.display = '';
-      const orderedResults = resultsViewMode === 'watch' ? watchabilityOrder(data.results) : data.results;
-      renderCfpRulesCards(container, team, orderedResults);
+      renderCfpRulesCards(container, team, data.results);
       return;
     } catch (err){
       if (isStale()) return;
-      document.getElementById('viewToggleRow').style.display = 'none';
       if (!hasStaticFallback()){
         container.innerHTML = `<p class="empty-note">Couldn't load live data for this week (${err.message}). Try a different week, or check back soon.</p>`;
         document.getElementById('weekTagRest').textContent = `· live data unavailable`;
@@ -3565,7 +3509,6 @@ async function render(){
     }
   }
 
-  document.getElementById('viewToggleRow').style.display = 'none';
   const ranked = scoreWeek(team);
 
   document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team} — who to root for`;
