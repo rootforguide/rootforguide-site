@@ -821,6 +821,18 @@
     cursor:pointer;
   }
   .watch-all-btn:hover{ background:var(--amber); color:var(--field); }
+  .clear-all-btn{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    padding:8px 16px;
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    background:transparent;
+    color:var(--chalk-dim);
+    cursor:pointer;
+  }
+  .clear-all-btn:hover{ border-color:var(--chalk-dim); color:var(--chalk); }
   .drag-handle{ cursor:grab; opacity:0.6; margin-right:4px; }
   .saved-row[draggable="true"]{ cursor:grab; }
   .saved-row[draggable="true"]:active{ cursor:grabbing; }
@@ -1114,6 +1126,7 @@
         <button class="saved-sort-btn" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
       </div>
       <button class="watch-all-btn" onclick="watchAllSaved()">Watch all highlights →</button>
+      <button class="clear-all-btn" onclick="clearAllSaved()">Clear all</button>
     </div>
     <div id="savedGamesList"></div>
   </section>
@@ -1818,7 +1831,7 @@ function scoreWeek(team){
           ? `${opponent} is ranked (#${oppRank}) — a loss here would genuinely hurt.`
           : (winProb !== null && Math.abs(winProb - 0.5) < 0.15
               ? `The spread is close — real upset risk even against an unranked team.`
-              : `${opponent} is unranked and ${team} is heavily favored — but an upset loss here would be a real, lasting blow to the playoff resume, one most teams can't just shake off.`);
+              : `${opponent} is unranked and ${team}${userRank ? ` (#${userRank})` : ''} is heavily favored — but an upset loss here would be a real, lasting blow to the playoff resume, one most teams can't just shake off.`);
         reason = `${team} is playing. ${riskNote}`;
       }
 
@@ -1935,20 +1948,20 @@ function scoreWeek(team){
           tier = "Head-to-Head";
           base = 85; // committee treats head-to-head as the stronger tiebreaker
           if (outcome === "beat"){
-            reason = `${team} already beat ${cand} head-to-head — the CFP committee treats that as a direct tiebreaker in ${team}'s favor. A win for ${cand} this week keeps that head-to-head result relevant (${Math.round(confidence * 100)}% network confidence).`;
+            reason = `${team}${userRank ? ` (#${userRank})` : ''} already beat ${cand}${candRank ? ` (#${candRank})` : ''} head-to-head — the CFP committee treats that as a direct tiebreaker in ${team}'s favor. A win for ${cand} this week keeps that head-to-head result relevant (${Math.round(confidence * 100)}% network confidence).`;
             weight = 0.85;
           } else {
-            reason = `${cand} beat ${team} head-to-head — that tiebreaker already favors them. A loss for ${cand} this week is your best way to offset it (${Math.round(confidence * 100)}% network confidence).`;
+            reason = `${cand}${candRank ? ` (#${candRank})` : ''} beat ${team}${userRank ? ` (#${userRank})` : ''} head-to-head — that tiebreaker already favors them. A loss for ${cand} this week is your best way to offset it (${Math.round(confidence * 100)}% network confidence).`;
             weight = 0.75;
           }
         } else {
           tier = "Resume Connection";
           base = 60;
           if (outcome === "beat"){
-            reason = `${team} already beat ${cand} — a win for them this week makes that win look better on ${team}'s resume (${Math.round(confidence * 100)}% network confidence).`;
+            reason = `${team}${userRank ? ` (#${userRank})` : ''} already beat ${cand} — a win for them this week makes that win look better on ${team}'s resume (${Math.round(confidence * 100)}% network confidence).`;
             weight = 0.7;
           } else {
-            reason = `${team} lost to ${cand} earlier — a win for them this week makes that loss look like less of a red flag (${Math.round(confidence * 100)}% network confidence).`;
+            reason = `${team}${userRank ? ` (#${userRank})` : ''} lost to ${cand} earlier — a win for them this week makes that loss look like less of a red flag (${Math.round(confidence * 100)}% network confidence).`;
             weight = 0.55;
           }
         }
@@ -1974,7 +1987,7 @@ function scoreWeek(team){
         const confidence = networkConfidence(confMate);
         const base = 48;
         const score = Math.min(92, Math.round(base * confidence * seasonMult * 10) / 10);
-        const reason = `${confMate} is a fellow ${myConference} team${confMateRank ? ` (#${confMateRank})` : ''} — a win over ${opponent} raises how strong the whole conference looks nationally, which reflects on ${team} too (${Math.round(confidence * 100)}% network confidence).`;
+        const reason = `${confMate} is a fellow ${myConference} team${confMateRank ? ` (#${confMateRank})` : ''} — a win over ${opponent} raises how strong the whole conference looks nationally, which reflects on ${team}${userRank ? ` (#${userRank})` : ''} too (${Math.round(confidence * 100)}% network confidence).`;
         if (!best || score > best.score){
           best = { game_id:id, home, away, tier:"Conference Watch", rootFor:confMate, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
         }
@@ -2000,7 +2013,7 @@ function scoreWeek(team){
       const confidence = networkConfidence(featuredTeam);
       const base = featuredRank <= 10 ? 55 : (featuredRank <= 25 ? 42 : 30);
       const score = Math.min(90, Math.round(base * confidence * seasonMult * 10) / 10);
-      const reason = `${featuredTeam} is ranked #${featuredRank} — an upset here reshuffles who counts as a marquee, resume-building win nationally, even without a direct tie to ${team} (${Math.round(confidence * 100)}% network confidence).`;
+      const reason = `${featuredTeam} is ranked #${featuredRank} — an upset here reshuffles who counts as a marquee, resume-building win nationally, even without a direct tie to ${team}${userRank ? ` (#${userRank})` : ''} (${Math.round(confidence * 100)}% network confidence).`;
       if (!best || score > best.score){
         best = { game_id:id, home, away, tier:"National Resume Watch", rootFor:underdog, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
       }
@@ -2294,8 +2307,8 @@ function loadSavedGames(){
 function persistSavedGames(games){
   try { localStorage.setItem('cg_saved_games', JSON.stringify(games)); } catch(e){}
 }
-const SAVED_GAME_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const WATCHED_CLICK_TTL_MS = 5 * 60 * 1000; // once a saved game's highlights link is actually clicked, remove it 5 minutes later regardless of the 7-day window above
+const SAVED_GAME_TTL_MS = 6 * 24 * 60 * 60 * 1000;
+const WATCHED_CLICK_TTL_MS = 5 * 60 * 1000; // once a saved game's highlights link is actually clicked, remove it 5 minutes later regardless of the 6-day window above
 let savedGames = loadSavedGames(); // array, in custom/drag order
 pruneExpiredSavedGames();
 let savedSortMode = 'gamegravity'; // 'gamegravity' | 'chronological' | 'custom' -- matches the display order of the sort buttons
@@ -2382,7 +2395,7 @@ function toggleSavedGame(gameKey, gameData){
   else savedGames.push({ key: gameKey, ...gameData, savedAt: Date.now() });
   persistSavedGames(savedGames);
 }
-// Drops entries older than 7 days from when they were saved (not
+// Drops entries older than 6 days from when they were saved (not
 // from kickoff -- some saves, like ones from the table view, don't
 // carry a kickoff time at all, so save-time is the one anchor every
 // entry always has). Runs once on load and again each time the tab
@@ -2397,7 +2410,7 @@ function pruneExpiredSavedGames(){
   let touched = false;
   savedGames.forEach(g => { if (!g.savedAt){ g.savedAt = now; touched = true; } });
   savedGames = savedGames.filter(g => {
-    if ((now - g.savedAt) >= SAVED_GAME_TTL_MS) return false; // 7 days since saving, regardless of clicks
+    if ((now - g.savedAt) >= SAVED_GAME_TTL_MS) return false; // 6 days since saving, regardless of clicks
     if (g.watchedAt && (now - g.watchedAt) >= WATCHED_CLICK_TTL_MS) return false; // 5 minutes since the highlights link was actually clicked
     return true;
   });
@@ -2441,7 +2454,7 @@ document.addEventListener('click', (e) => {
   markLinkWatched(a.dataset.link);
   a.classList.add('watched');
   // If this link belongs to a saved game, start a 5-minute countdown
-  // to auto-remove it from Saved -- on top of the existing 7-day
+  // to auto-remove it from Saved -- on top of the existing 6-day
   // expiry from when it was originally saved. The assumption is that
   // clicking through to highlights means the visitor is done with it.
   const matchingSaved = savedGames.find(g => g.link === a.dataset.link);
@@ -2582,6 +2595,13 @@ function watchAllSaved(){
     setTimeout(() => window.open(link, '_blank', 'noopener'), i * 150);
   });
 }
+function clearAllSaved(){
+  if (savedGames.length === 0) return;
+  if (!window.confirm(`Remove all ${savedGames.length} saved games? This can't be undone.`)) return;
+  savedGames = [];
+  persistSavedGames(savedGames);
+  renderSavedTab();
+}
 
 function renderStatusBadge(kickoffUTC){
   const status = gameLiveStatus(kickoffUTC);
@@ -2646,7 +2666,7 @@ function renderWatch(r, team, showScores){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">✓</span>
-      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span> ${highlightsLinkHtml(r.link, 'Highlights →')}${save}
+      <span class="watch-text final-score">FINAL: ${rankBadgeForResult(r, "away")}${r.away} ${r.away_score} – ${r.home_score} ${rankBadgeForResult(r, "home")}${r.home}</span> ${highlightsLinkHtml(r.link, 'Highlights →')}${save}
     </div>`;
   }
   if (showScores && !hasFinalScore){
@@ -3098,14 +3118,14 @@ function renderSchedule(data, team){
     return;
   }
   section.style.display = '';
-  document.getElementById('scheduleTitle').textContent = `${team} — Full Schedule`;
+  document.getElementById('scheduleTitle').textContent = `${rankBadge(team)}${team} — Full Schedule`;
   const list = document.getElementById('scheduleList');
   list.innerHTML = '';
   data.schedule.forEach(g => {
     const row = document.createElement('div');
     row.className = 'national-game-row stacked';
     const oppLabel = (g.oppRank ? `#${g.oppRank} ` : '') + g.opp;
-    const matchupText = g.home ? `${team} vs ${oppLabel}` : `${team} @ ${oppLabel}`;
+    const matchupText = g.home ? `${rankBadge(team)}${team} vs ${oppLabel}` : `${rankBadge(team)}${team} @ ${oppLabel}`;
     let tags = '';
     if (g.oppRank) tags += '<span class="game-tag ranked">Ranked</span>';
     if (g.isRivalry) tags += '<span class="game-tag rivalry">Rivalry</span>';
@@ -3433,14 +3453,14 @@ function buildShareText(team){
   const ranked = scoreWeek(team);
   const top5 = ranked.slice(0, 5);
   const lines = top5.map((r, i) => {
-    const header = `${i + 1}. ${r.score.toFixed(0)} GG\u2122 · ${r.away} @ ${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
+    const header = `${i + 1}. ${r.score.toFixed(0)} GG\u2122 · ${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
     const when = formatKickoff(r.kickoffUTC, team); // team's own local time, ET alongside
     const details = `   ${when}${r.network ? ` · ${r.network}` : ''}`;
     return `${header}\n${details}`;
   });
   // Site link placed right up top (drives traffic before anyone scrolls
   // past it) as well as at the end (second chance to click through).
-  return `🏈 ${team} — Week ${WEEK} Game Gravity\u2122\nrootforguide.com\n\n${lines.join('\n\n')}\n\nFull breakdown → rootforguide.com`;
+  return `🏈 ${rankBadge(team)}${team} — Week ${WEEK} Game Gravity\u2122\nrootforguide.com\n\n${lines.join('\n\n')}\n\nFull breakdown → rootforguide.com`;
 }
 
 // Legacy clipboard fallback — works even without HTTPS/secure context
