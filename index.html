@@ -741,6 +741,57 @@
     opacity:1;
     background:var(--panel-line);
   }
+  .save-game-btn{
+    display:inline-block;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding:1px 4px;
+    border-radius:4px;
+    opacity:0.6;
+  }
+  .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
+  .save-game-btn.saved{ opacity:1; color:var(--amber); }
+  .saved-controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:16px 0 20px;
+  }
+  .saved-sort-group{
+    display:inline-flex;
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .saved-sort-btn{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:12px;
+    font-weight:700;
+    padding:7px 14px;
+    border:none;
+    background:var(--panel);
+    color:var(--chalk-dim);
+    cursor:pointer;
+  }
+  .saved-sort-btn.active{ background:var(--amber); color:var(--field); }
+  .watch-all-btn{
+    font-family:'Source Sans 3', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    padding:8px 16px;
+    border:1px solid var(--amber);
+    border-radius:20px;
+    background:transparent;
+    color:var(--amber);
+    cursor:pointer;
+  }
+  .watch-all-btn:hover{ background:var(--amber); color:var(--field); }
+  .drag-handle{ cursor:grab; opacity:0.6; margin-right:4px; }
+  .saved-row[draggable="true"]{ cursor:grab; }
+  .saved-row[draggable="true"]:active{ cursor:grabbing; }
   .table-divider-row td{
     padding:6px 12px !important;
     border-top:1px dashed var(--amber) !important;
@@ -785,6 +836,13 @@
     font-size:13px;
     color:var(--chalk-dim);
     max-width:60ch;
+  }
+  .popover-simple{
+    margin:0 0 10px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--panel-line);
+    color:var(--chalk);
+    font-size:14px;
   }
 
   .last-next-section{
@@ -1005,21 +1063,27 @@
     </div>
   </header>
 
-  <div class="picker">
-    <p class="field-label">Conference</p>
-    <select id="conferenceSelect"></select>
-
-    <p class="field-label" style="margin-top:20px;">Team</p>
-    <select id="teamSelect"></select>
-
-    <p class="field-label" style="margin-top:20px;">Season</p>
-    <select id="seasonSelect"></select>
-  </div>
-
   <div class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="gamegravity">Game Gravity</button>
     <button class="tab-btn" data-tab="rankings">Rankings</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
+    <button class="tab-btn" data-tab="saved">Saved</button>
+  </div>
+
+  <div class="tab-panel" id="panelSaved" style="display:none;">
+  <section class="national-ticker">
+    <h2 class="national-ticker-title">Saved Games</h2>
+    <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
+    <div class="saved-controls">
+      <div class="saved-sort-group">
+        <button class="saved-sort-btn active" data-sort="custom" onclick="setSavedSortMode('custom')">Custom order</button>
+        <button class="saved-sort-btn" data-sort="chronological" onclick="setSavedSortMode('chronological')">Chronological</button>
+        <button class="saved-sort-btn" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity</button>
+      </div>
+      <button class="watch-all-btn" onclick="watchAllSaved()">Watch all highlights →</button>
+    </div>
+    <div id="savedGamesList"></div>
+  </section>
   </div>
 
   <div class="tab-panel" id="panelRankings" style="display:none;">
@@ -1030,13 +1094,14 @@
       <table class="top25-table">
         <thead>
           <tr>
-            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
+            <th>Rk</th><th>Colley <span class="info-icon" id="colleyInfoIcon" tabindex="0" role="button" aria-label="What is the Colley Matrix?" title="A math-only ranking based purely on who beat whom — no opinions, no polls involved.">i</span></th><th>Team</th><th>Record</th><th>Trend</th><th>Last</th><th>Next</th>
           </tr>
         </thead>
         <tbody id="top25Body"></tbody>
       </table>
     </div>
     <div class="info-popover" id="colleyInfoPopover" style="display:none;">
+      <p class="popover-simple"><strong>In simple terms:</strong> a computer ranking based purely on who beat whom — no humans, no opinions, no polls involved.</p>
       The Colley Matrix ranks teams from wins and losses alone — a real network of who's beaten whom, nothing else. It never sees margin of victory, injuries, or a team's reputation; a 1-point win counts exactly the same as a 40-point blowout. Strength of schedule isn't guessed at or assigned by anyone — it emerges purely from how each team's results connect to everyone else's, and that network only gets stronger as more real games are played. Early in a season, with few connections between teams, it can disagree with the human poll a lot — that's the method being honest about how little evidence it has yet, not a flaw to explain away.
     </div>
   </section>
@@ -1103,9 +1168,20 @@
   <p class="share-note-bottom" id="shareNoteBottom"></p>
   </div>
 
+  <div class="picker">
+    <p class="field-label">Conference</p>
+    <select id="conferenceSelect"></select>
+
+    <p class="field-label" style="margin-top:20px;">Team</p>
+    <select id="teamSelect"></select>
+
+    <p class="field-label" style="margin-top:20px;">Season</p>
+    <select id="seasonSelect"></select>
+  </div>
+
   <section class="suggestion-box">
-    <p class="suggestion-title">Something missing? Something wrong? Tell us.</p>
-    <p class="suggestion-sub">Wrong odds, a team that should be ranked, a feature idea — whatever it is.</p>
+    <p class="suggestion-title">See something dead wrong, or want a real feature?</p>
+    <p class="suggestion-sub">Bad data, a broken feature, a real feature idea we haven't thought of — that's what actually helps.</p>
     <textarea id="suggestionText" class="suggestion-input" rows="3" placeholder="Type your suggestion here…" maxlength="1000"></textarea>
     <button class="suggestion-submit" id="suggestionSubmit">Send Feedback</button>
     <p class="suggestion-note" id="suggestionNote"></p>
@@ -1321,7 +1397,11 @@ function visitorTz(){
 }
 function formatKickoff(kickoffUTC, team){
   if (!kickoffUTC) return "Time TBA";
-  const primaryTz = visitorTz() || teamTz(team);
+  // Priority order: the visitor's own real device timezone, then a
+  // favorited team's home timezone (if they have one pinned), then
+  // whichever team is currently being viewed.
+  const favorited = firstFavoritedTeam();
+  const primaryTz = visitorTz() || (favorited ? teamTz(favorited) : null) || teamTz(team);
   const local = formatInTz(kickoffUTC, primaryTz);
   if (primaryTz === "America/New_York") return local;
   const etFmt = new Intl.DateTimeFormat('en-US', {
@@ -2072,7 +2152,7 @@ document.getElementById('btnViewWatch').addEventListener('click', () => {
 // core feature and stays the default/active tab on load; the other
 // two are simple show/hide panels, not re-fetches, so switching is
 // instant.
-const TAB_PANELS = { gamegravity:'panelGameGravity', rankings:'panelRankings', schedule:'panelSchedule' };
+const TAB_PANELS = { gamegravity:'panelGameGravity', rankings:'panelRankings', schedule:'panelSchedule', saved:'panelSaved' };
 function switchTab(tabName){
   Object.keys(TAB_PANELS).forEach(name => {
     const panel = document.getElementById(TAB_PANELS[name]);
@@ -2081,6 +2161,7 @@ function switchTab(tabName){
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
+  if (tabName === 'saved') renderSavedTab();
 }
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -2139,6 +2220,144 @@ function gameLiveStatus(kickoffUTC){
   if (now < kickoff + estDurationMs) return 'live';
   return 'likely-final';
 }
+// Saved games -- a bin the visitor can add games to from any view, to
+// come back and watch highlights later. Stored client-side only, same
+// pattern as pinned teams. Same spoiler rules apply on render: no
+// score shown until the toggle is on or the peek button is held.
+function loadSavedGames(){
+  try {
+    const raw = localStorage.getItem('cg_saved_games');
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){ return []; }
+}
+function persistSavedGames(games){
+  try { localStorage.setItem('cg_saved_games', JSON.stringify(games)); } catch(e){}
+}
+let savedGames = loadSavedGames(); // array, in custom/drag order
+let savedSortMode = 'custom'; // 'custom' | 'chronological' | 'gamegravity'
+function isGameSaved(gameKey){ return savedGames.some(g => g.key === gameKey); }
+function toggleSavedGame(gameKey, gameData){
+  const idx = savedGames.findIndex(g => g.key === gameKey);
+  if (idx !== -1) savedGames.splice(idx, 1);
+  else savedGames.push({ key: gameKey, ...gameData });
+  persistSavedGames(savedGames);
+}
+const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+function saveGameButton(gameKey, gameData){
+  const safeKey = gameKey.replace(/"/g, '&quot;');
+  const safeData = JSON.stringify(gameData).replace(/"/g, '&quot;');
+  const saved = isGameSaved(gameKey);
+  return ` <span class="save-game-btn${saved ? ' saved' : ''}" data-game-key="${safeKey}" data-game-data="${safeData}" title="${saved ? 'Remove from saved' : 'Save this game'}">${saved ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG}</span>`;
+}
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('.save-game-btn');
+  if (!btn) return;
+  const key = btn.dataset.gameKey;
+  let data;
+  try { data = JSON.parse(btn.dataset.gameData); } catch(err){ return; }
+  toggleSavedGame(key, data);
+  btn.classList.toggle('saved');
+  btn.innerHTML = isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG;
+  btn.title = isGameSaved(key) ? 'Remove from saved' : 'Save this game';
+  if (document.getElementById('panelSaved') && document.getElementById('panelSaved').style.display !== 'none'){
+    renderSavedTab();
+  }
+});
+function setSavedSortMode(mode){
+  savedSortMode = mode;
+  renderSavedTab();
+}
+function sortedSavedGames(){
+  const copy = savedGames.slice();
+  if (savedSortMode === 'chronological'){
+    // Games with no kickoff time (saved from the table view, which
+    // doesn't carry one) sort to the end rather than colliding at
+    // an arbitrary date.
+    return copy.sort((a, b) => {
+      if (!a.kickoffUTC && !b.kickoffUTC) return 0;
+      if (!a.kickoffUTC) return 1;
+      if (!b.kickoffUTC) return -1;
+      return new Date(a.kickoffUTC) - new Date(b.kickoffUTC);
+    });
+  }
+  if (savedSortMode === 'gamegravity'){
+    return copy.sort((a, b) => {
+      const sa = (a.score === null || a.score === undefined) ? -1 : a.score;
+      const sb = (b.score === null || b.score === undefined) ? -1 : b.score;
+      return sb - sa;
+    });
+  }
+  return copy; // 'custom' -- the array's own stored order
+}
+let dragFromKey = null;
+function renderSavedTab(){
+  const list = document.getElementById('savedGamesList');
+  if (!list) return;
+  document.querySelectorAll('.saved-sort-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sort === savedSortMode);
+  });
+  if (savedGames.length === 0){
+    list.innerHTML = '<p class="empty-note">No saved games yet — tap the bookmark icon next to any game to add it here.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  const ordered = sortedSavedGames();
+  ordered.forEach((g) => {
+    const row = document.createElement('div');
+    row.className = 'national-game-row stacked saved-row';
+    row.draggable = (savedSortMode === 'custom');
+    row.dataset.key = g.key;
+    const highlightsLink = g.link ? `<a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
+    const save = saveGameButton(g.key, g);
+    const dragHandle = (savedSortMode === 'custom') ? '<span class="drag-handle" title="Drag to reorder">⠿</span> ' : '';
+    row.innerHTML = `
+      <span class="matchup-text">${dragHandle}${g.away} @ ${g.home}</span>
+      <span class="game-meta">${formatKickoff(g.kickoffUTC, g.home)}${g.network ? ' · ' + g.network : ''} ${highlightsLink}${save}</span>
+    `;
+    list.appendChild(row);
+  });
+}
+// Native HTML5 drag-and-drop, scoped to the saved list, active only
+// in custom-order mode. Reorders the underlying array on drop and
+// persists it, so the new order sticks on reload too.
+document.addEventListener('dragstart', (e) => {
+  const row = e.target.closest && e.target.closest('.saved-row');
+  if (!row || savedSortMode !== 'custom') return;
+  dragFromKey = row.dataset.key;
+  e.dataTransfer.effectAllowed = 'move';
+});
+document.addEventListener('dragover', (e) => {
+  if (e.target.closest && e.target.closest('.saved-row')) e.preventDefault();
+});
+document.addEventListener('drop', (e) => {
+  const row = e.target.closest && e.target.closest('.saved-row');
+  if (!row || !dragFromKey || savedSortMode !== 'custom') return;
+  e.preventDefault();
+  const toKey = row.dataset.key;
+  if (toKey === dragFromKey) return;
+  const fromIdx = savedGames.findIndex(g => g.key === dragFromKey);
+  const toIdx = savedGames.findIndex(g => g.key === toKey);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const [moved] = savedGames.splice(fromIdx, 1);
+  savedGames.splice(toIdx, 0, moved);
+  persistSavedGames(savedGames);
+  dragFromKey = null;
+  renderSavedTab();
+});
+// "Watch all" -- opens every saved game's highlights link at once, so
+// getting through a saved list takes one click instead of one per
+// game. Browsers may still block some as popups since they weren't
+// each triggered by their own direct click; the small stagger below
+// reduces that, but isn't a guarantee across every browser.
+function watchAllSaved(){
+  const links = sortedSavedGames().map(g => g.link).filter(Boolean);
+  links.forEach((link, i) => {
+    setTimeout(() => window.open(link, '_blank', 'noopener'), i * 150);
+  });
+}
+
 function renderStatusBadge(kickoffUTC){
   const status = gameLiveStatus(kickoffUTC);
   if (status === 'live') return `<span class="status-badge live">🔴 Likely live now</span>`;
@@ -2155,15 +2374,20 @@ function renderStatusBadge(kickoffUTC){
 // thing that badge exists to prevent). The button's own look never
 // changes either way -- it's simply absent until the uniform window
 // has passed, then always the same icon from then on.
-function quickPeekButton(scoreText, kickoffUTC, homeScoreVal, awayScoreVal){
-  // kickoffUTC === 'skip-check' means the caller has already
-  // established this is safely in the past (e.g. a prior week's
-  // result, not something from today) -- everywhere else, the same
-  // uniform threshold as the status badge still applies.
+// Returns empty whenever the global spoiler toggle is already ON --
+// the calling context is already showing the real score directly in
+// that case, so a "hold to peek" button next to an already-visible
+// score is redundant and confusing, not an extra safeguard.
+const EYE_ICON_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+function quickPeekButton(awayName, awayScore, homeName, homeScore, kickoffUTC){
+  if (showScores) return '';
   if (kickoffUTC !== 'skip-check' && gameLiveStatus(kickoffUTC) !== 'likely-final') return '';
-  if (homeScoreVal === null || homeScoreVal === undefined || awayScoreVal === null || awayScoreVal === undefined) return '';
-  const safeScore = String(scoreText).replace(/"/g, '&quot;');
-  return ` <span class="quick-peek" data-score="${safeScore}" title="Hold to peek at the score">👁</span>`;
+  if (homeScore === null || homeScore === undefined || awayScore === null || awayScore === undefined) return '';
+  // Named, so the revealed text is actually legible -- "14-31" alone
+  // doesn't say who had which score.
+  const scoreText = `${awayName} ${awayScore} – ${homeName} ${homeScore}`;
+  const safeScore = scoreText.replace(/"/g, '&quot;');
+  return ` <span class="quick-peek" data-score="${safeScore}" title="Hold to peek at the score">${EYE_ICON_SVG}</span>`;
 }
 (function setUpQuickPeekHandlers(){
   const reveal = (e) => {
@@ -2175,7 +2399,7 @@ function quickPeekButton(scoreText, kickoffUTC, homeScoreVal, awayScoreVal){
   const hideAll = () => {
     document.querySelectorAll('.quick-peek[data-revealed="1"]').forEach(el => {
       el.dataset.revealed = '';
-      el.textContent = '👁';
+      el.innerHTML = EYE_ICON_SVG;
     });
   };
   document.addEventListener('mousedown', reveal);
@@ -2190,25 +2414,27 @@ function renderWatch(r, team, showScores){
   const postTime = formatPostTime(r.kickoffUTC, r.network, team);
   const hasFinalScore = r.home_score !== null && r.away_score !== null;
   const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)} · ${r.network} ${renderStatusBadge(r.kickoffUTC)}</div>`;
+  const gameKey = `${r.away}@${r.home}@${r.kickoffUTC}`;
+  const save = saveGameButton(gameKey, { away:r.away, home:r.home, kickoffUTC:r.kickoffUTC, link:r.link, network:r.network, score:r.score ?? null });
 
   if (showScores && hasFinalScore){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">✓</span>
-      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span>
+      <span class="watch-text final-score">FINAL: ${r.away} ${r.away_score} – ${r.home_score} ${r.home}</span>${save}
     </div>`;
   }
   if (showScores && !hasFinalScore){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">▶</span>
-      <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime} · not final yet</span></span>
+      <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
     </div>`;
   }
   return `${kickoffLine}
   <div class="watch-row">
     <span class="watch-icon">▶</span>
-    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(`${r.away_score}-${r.home_score}`, r.kickoffUTC, r.home_score, r.away_score)}
+    <span class="watch-text"><a href="${r.link}" target="_blank" rel="noopener noreferrer">Watch free, spoiler-safe →</a> <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
   </div>`;
 }
 
@@ -2421,7 +2647,7 @@ function renderLastWeekColumn(data){
     // 'skip-check' here too -- this is always a PRIOR week's game by
     // definition (the "Last Week" column), safely past any live-game
     // timing window regardless of exact kickoff time.
-    const peek = quickPeekButton(`${g.away_score}-${g.home_score}`, 'skip-check', g.home_score, g.away_score);
+    const peek = quickPeekButton(g.away, g.away_score, g.home, g.home_score, 'skip-check');
     // Highlights link shown regardless of the spoiler toggle -- the
     // link itself reveals nothing (same rule as the Game Gravity
     // "Watch free, spoiler-safe" links); only the score stays gated.
@@ -2490,15 +2716,18 @@ function trendCell(trend){
   return `<span class="${cls}">${arrow}${trend.delta}</span>`;
 }
 
-function gameCell(g, forOpponentLabel){
+function gameCell(g, forOpponentLabel, teamName){
   if (!g) return '—';
   if (forOpponentLabel === 'last') {
     const verb = g.result === 'beat' ? 'W' : 'L';
     // No overtime-timing risk to guard here (unlike same-week games) --
     // this is always a PRIOR week's result by definition, so a peek
     // button can show unconditionally once the row itself is real.
-    const peek = quickPeekButton(`${g.teamScore}-${g.oppScore}`, 'skip-check', g.teamScore, g.oppScore);
-    return `${verb} vs ${g.opp}${peek}`;
+    const peek = quickPeekButton(teamName, g.teamScore, g.opp, g.oppScore, 'skip-check');
+    const highlightsLink = g.link ? ` <a href="${g.link}" target="_blank" rel="noopener">Highlights →</a>` : '';
+    const gameKey = `${teamName}@${g.opp}@last`;
+    const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null });
+    return `${verb} vs ${g.opp}${peek}${highlightsLink}${save}`;
   }
   return `vs ${g.opp}`;
 }
@@ -2510,7 +2739,7 @@ function renderTop25(data){
     return;
   }
   section.style.display = '';
-  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see last week\'s results'}`;
+  document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${showScores ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}`;
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
   const mask = (content) => showScores ? content : '<span class="spoiler-mask">•••</span>';
@@ -2541,15 +2770,15 @@ function renderTop25(data){
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${t.rank}</td>
-      <td>${t.colleyRank ? '#' + t.colleyRank : '—'}</td>
+      <td>${mask(t.colleyRank ? '#' + t.colleyRank : '—')}</td>
       <td>${t.school}</td>
       <td>${recordCell(t)}</td>
-      <td>${trendCell(t.trend)}</td>
-      <td>${mask(gameCell(t.lastGame, 'last'))}</td>
+      <td>${mask(trendCell(t.trend))}</td>
+      <td>${mask(gameCell(t.lastGame, 'last', t.school))}</td>
       <td>${gameCell(t.nextGame, 'next')}</td>
     `;
     body.appendChild(row);
-    if (t.rank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round —'));
+    if (t.rank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
     if (t.rank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
   });
 }

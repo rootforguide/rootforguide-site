@@ -149,15 +149,57 @@ function extractPollRanks(rankingsResponse, week) {
   // can end up showing today's rankings instead. If there's no exact
   // match, fall back to the closest PRIOR week only (never a later
   // one, and never just "whatever's newest").
+  //
+  // 5-whys note (LSU/Ole Miss showing unranked, investigated but not
+  // yet confirmed fixed -- needs live verification against the
+  // deployed Worker, not just code review):
+  //   1. Why would a genuinely-ranked team show as unranked? Because
+  //      this function found no matching poll entry for them.
+  //   2. Why would the entry be missing? Either CFBD's response
+  //      genuinely lacks them (unlikely -- confirmed ranked via
+  //      independent web search), or `week` here doesn't match
+  //      whatever week number CFBD's /rankings response actually
+  //      uses for the current poll.
+  //   3. Why would `week` be wrong? It's computed upstream from the
+  //      site's own current-week detection, which may not be in
+  //      sync with CFBD's OWN internal week numbering for polls
+  //      specifically (games and polls are not guaranteed to share
+  //      the same week-numbering convention).
+  //   4. Why would those two numbering conventions diverge? Not
+  //      confirmed -- would need a live response from CFBD's
+  //      /rankings endpoint to compare its actual `week` values
+  //      against the site's computed "current week" side by side.
+  //   5. Root cause: unconfirmed without live API access. This
+  //      comment exists so the next debugging pass starts here
+  //      instead of re-deriving all of the above from scratch.
   let weekData = rankingsResponse.find(r => r.week === week);
   if (!weekData) {
     const priorWeeks = rankingsResponse.filter(r => r.week < week).sort((a, b) => b.week - a.week);
     weekData = priorWeeks[0] || null;
   }
-  if (!weekData) return [];
+  if (!weekData) return { ranks: [], warning: null };
   const wantedName = pollSource(week) === "CFP" ? "Playoff Committee Rankings" : "AP Top 25";
   const poll = (weekData.polls || []).find(p => p.poll === wantedName) || (weekData.polls || [])[0];
-  return poll ? poll.ranks : [];
+  const ranks = poll ? poll.ranks : [];
+
+  // Redundancy layer 3: a sanity check on the RESULT, independent of
+  // how we got here. A real AP/CFP poll always has exactly 25 unique
+  // schools, ranks 1-25 with no gaps or repeats. If that's not what
+  // we got, something upstream is wrong (wrong week matched, a
+  // malformed CFBD response, etc) -- surface it as a warning on the
+  // response instead of silently serving data that LOOKS complete
+  // but isn't, so it's visible in the live response for debugging
+  // rather than only discoverable by a user noticing a missing team.
+  let warning = null;
+  if (ranks.length !== 25) {
+    warning = `Poll for week ${weekData.week} has ${ranks.length} ranked teams, not the expected 25.`;
+  } else {
+    const schools = new Set(ranks.map(r => r.school));
+    const rankNums = new Set(ranks.map(r => r.rank));
+    if (schools.size !== 25) warning = `Poll for week ${weekData.week} has duplicate schools.`;
+    else if (rankNums.size !== 25) warning = `Poll for week ${weekData.week} has duplicate or missing rank numbers.`;
+  }
+  return { ranks, warning, resolvedWeek: weekData.week };
 }
 
 // The full Colley matrix (linear-algebra rating solve) used to live
@@ -469,8 +511,9 @@ if (!team && mode === "currentweek") {
           cfbdFetch(env, "/teams", { year })
         ]);
 
-        const currentPoll = extractPollRanks(rankingsRaw, week);
-        const prevPoll = week > 0 ? extractPollRanks(rankingsRaw, week - 1) : [];
+        const currentPollResult = extractPollRanks(rankingsRaw, week);
+        const currentPoll = currentPollResult.ranks;
+        const prevPoll = week > 0 ? extractPollRanks(rankingsRaw, week - 1).ranks : [];
         const prevRankOf = {};
         prevPoll.forEach(r => { prevRankOf[r.school] = r.rank; });
 
@@ -507,7 +550,7 @@ if (!team && mode === "currentweek") {
             const opp = isHome ? g.awayTeam : g.homeTeam;
             const teamScore = isHome ? g.homePoints : g.awayPoints;
             const oppScore = isHome ? g.awayPoints : g.homePoints;
-            lastGame = { opp, result: teamScore > oppScore ? "beat" : "lost_to", teamScore, oppScore };
+            lastGame = { opp, result: teamScore > oppScore ? "beat" : "lost_to", teamScore, oppScore, link: watchLink(isHome ? school : opp, isHome ? opp : school, year) };
           }
 
           // Targets week+1 specifically -- matching exactly what the
@@ -537,7 +580,7 @@ if (!team && mode === "currentweek") {
           };
         });
 
-        const top25Body = JSON.stringify({ year, week, pollSource: pollSource(week), top25 });
+        const top25Body = JSON.stringify({ year, week, pollSource: pollSource(week), top25, _dataWarning: currentPollResult.warning || undefined });
         const top25Response = new Response(top25Body, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=10800" } });
         ctx.waitUntil(top25Cache.put(top25CacheKey, top25Response.clone()));
         return top25Response;
@@ -564,7 +607,7 @@ if (!team && mode === "currentweek") {
           cfbdFetch(env, "/rankings", { year, seasonType: "regular" })
         ]);
 
-        const pollRanks = extractPollRanks(rankingsRaw, week);
+        const pollRanks = extractPollRanks(rankingsRaw, week).ranks;
         const rankedSet = {};
         pollRanks.forEach(r => { rankedSet[r.school] = r.rank; });
         const rivals = RIVALRIES[team] || [];
@@ -618,7 +661,7 @@ if (!team && mode === "currentweek") {
           cfbdFetch(env, "/lines", { year, week, seasonType: "regular" }),
           cfbdFetch(env, "/rankings", { year, seasonType: "regular" })
         ]);
-        const pollRanks = extractPollRanks(rankingsRaw, week);
+        const pollRanks = extractPollRanks(rankingsRaw, week).ranks;
         const rankedSet = {};
         pollRanks.forEach(r => { rankedSet[r.school] = r.rank; });
 
@@ -670,7 +713,7 @@ if (!team && mode === "currentweek") {
         cfbdFetch(env, "/games", { year, team, seasonType: "regular" })
       ]);
 
-      const pollRanks = extractPollRanks(rankingsRaw, week);
+      const pollRanks = extractPollRanks(rankingsRaw, week).ranks;
       const teamList = teamsInfo.filter(t => t.classification === "fbs").map(t => t.school);
       const teamConferences = {};
       teamsInfo.forEach(t => { teamConferences[t.school] = t.conference; });
