@@ -850,6 +850,12 @@
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:#4ade80; }
+  .save-game-btn.pop{ animation:savePop 0.35s ease-out; }
+  @keyframes savePop{
+    0%{ transform:scale(1); }
+    40%{ transform:scale(1.45); }
+    100%{ transform:scale(1); }
+  }
   .highlights-link.watched{ color:var(--chalk-dim); opacity:0.75; }
   .result-badge{ font-weight:800; padding:1px 5px; border-radius:3px; margin-right:3px; }
   .result-badge.win{ color:#4ade80; background:rgba(74,222,128,0.12); }
@@ -931,6 +937,11 @@
   .drag-handle{ cursor:grab; opacity:0.6; margin-right:4px; }
   .saved-row[draggable="true"]{ cursor:grab; }
   .saved-row[draggable="true"]:active{ cursor:grabbing; }
+  .saved-row{ animation:savedRowIn 0.3s ease-out; }
+  @keyframes savedRowIn{
+    0%{ opacity:0; transform:translateY(-6px); }
+    100%{ opacity:1; transform:translateY(0); }
+  }
   .table-divider-row td{
     padding:6px 12px !important;
     border-top:1px dashed var(--amber) !important;
@@ -1033,6 +1044,7 @@
     align-items:center;
     gap:8px;
     opacity:0.5;
+    transition:opacity 0.3s ease;
   }
   .step-item.active, .step-item.done{ opacity:1; }
   .step-num{
@@ -1048,6 +1060,7 @@
     border:2px solid var(--panel-line);
     color:var(--chalk-dim);
     flex-shrink:0;
+    transition:background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
   .step-item.active .step-num{
     border-color:var(--amber);
@@ -1058,6 +1071,12 @@
     border-color:#4ade80;
     background:#4ade80;
     color:var(--field);
+    animation:stepDone 0.4s ease-out;
+  }
+  @keyframes stepDone{
+    0%{ transform:scale(1); }
+    50%{ transform:scale(1.35); }
+    100%{ transform:scale(1); }
   }
   .step-label{
     font-family:'Big Shoulders Display', sans-serif;
@@ -1066,6 +1085,7 @@
     letter-spacing:0.2px;
     color:var(--chalk-dim);
     white-space:nowrap;
+    transition:color 0.3s ease;
   }
   .step-item.active .step-label, .step-item.done .step-label{ color:var(--chalk); }
   .step-arrow{ color:var(--panel-line); font-size:14px; }
@@ -2713,7 +2733,12 @@ document.addEventListener('click', (e) => {
   // expiry from when it was originally saved. The assumption is that
   // clicking through to highlights means the visitor is done with it.
   const matchingSaved = savedGames.find(g => g.link === a.dataset.link);
-  if (matchingSaved && !matchingSaved.watchedAt){
+  // Only starts the removal countdown if the game has actually
+  // reached the same uniform "likely final" threshold used everywhere
+  // else on the site -- clicking a highlights link before a game has
+  // even happened yet (nothing real to watch there anyway) shouldn't
+  // silently start the clock on removing it from Saved.
+  if (matchingSaved && !matchingSaved.watchedAt && gameLiveStatus(matchingSaved.kickoffUTC) === 'likely-final'){
     matchingSaved.watchedAt = Date.now();
     persistSavedGames(savedGames);
     // If the Saved tab happens to be open right now, make sure the
@@ -2743,6 +2768,13 @@ document.addEventListener('click', (e) => {
   btn.classList.toggle('saved');
   btn.innerHTML = isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG;
   btn.title = isGameSaved(key) ? 'Remove from saved' : 'Save this game';
+  // A quick, satisfying pop on the moment of SAVING specifically (not
+  // un-saving) -- confirmation feedback, not decoration on every click.
+  if (isGameSaved(key)){
+    btn.classList.remove('pop');
+    void btn.offsetWidth; // forces a reflow so the animation can restart even if clicked again quickly
+    btn.classList.add('pop');
+  }
   if (document.getElementById('panelSaved') && document.getElementById('panelSaved').style.display !== 'none'){
     renderSavedTab();
   }
