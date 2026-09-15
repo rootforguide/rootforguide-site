@@ -1956,12 +1956,15 @@ function applyTeamTheme(team){
   // The wordmark's "Highlights" span uses the team's actual primary
   // color (c1 -- the school's real brand color, not whichever of the two
   // this theme picked for general UI accents) with a contrasting outline,
-  // the same jersey-number treatment already used on the header icon
-  // (colored fill, opposite-luminance stroke) -- reads as genuine team
-  // color and pops against any background, unlike a flat fill that can
-  // wash out or blend into --chalk depending on the exact hue.
-  root.setProperty('--wordmark-accent', c1);
-  root.setProperty('--wordmark-stroke', relLuminance(c1) > 0.5 ? '#0A2557' : '#FFFFFF');
+  // the same jersey-number treatment already used on the header icon.
+  // c1 is usually also what --field (the page background) is set to
+  // above, so using it at full strength for the fill made the letters
+  // nearly disappear into the background -- only the outline showed.
+  // Lightening it keeps it clearly the team's own color while actually
+  // being visible against a background that's often that same color.
+  const wordmarkFill = mix(c1, '#FFFFFF', 0.4);
+  root.setProperty('--wordmark-accent', wordmarkFill);
+  root.setProperty('--wordmark-stroke', relLuminance(wordmarkFill) > 0.5 ? '#0A2557' : '#FFFFFF');
 }
 
 // Season-to-date results (for the Resume Connection / Head-to-Head
