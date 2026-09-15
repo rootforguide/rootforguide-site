@@ -41,6 +41,7 @@
     --panel-line:#2A4C93;
   }
   *{box-sizing:border-box;}
+  html,body{overflow-x:hidden;}
   /* Global link color -- without this, any <a> without a more
      specific rule falls back to the browser default (blue unvisited,
      purple visited), which reads as tacky against this dark navy/red
@@ -1232,9 +1233,10 @@
   }
 
   @media (max-width:480px){
-    .wordmark{font-size:40px;}
-    .logo-jersey{width:36px; height:36px;}
-    .logo-jersey-number{font-size:15px;}
+    .wordmark{font-size:32px;}
+    .brand-group{gap:8px;}
+    .logo-jersey{width:32px; height:32px;}
+    .logo-jersey-number{font-size:13px;}
     .game-card{grid-template-columns:54px 1fr;}
     .content-col{padding:14px 14px 14px 12px;}
     .score-col{padding:14px 4px;}
@@ -2336,7 +2338,7 @@ function populateWeekSelectForLive(){
   for (let w = 0; w <= TOTAL_SEASON_WEEKS_FOR_PICKER; w++){
     const opt = document.createElement('option');
     opt.value = w;
-    opt.textContent = w === 0 ? 'Week 0' : `Week ${w}`;
+    opt.textContent = (w === 0 ? 'Week 0' : `Week ${w}`) + (w === WEEK ? ' (current)' : '');
     weekSelect.appendChild(opt);
   }
   weekSelect.value = WEEK;
@@ -2478,6 +2480,22 @@ const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Binge Highlights'];
 function renderStepIndicator(){
   const el = document.getElementById('stepIndicator');
   if (!el) return;
+  // The full indicator here and the sticky copy in the tab bar below it
+  // both showed the same "Step N: ..." text at the same time whenever
+  // both were on screen -- e.g. right after picking a team, before any
+  // scrolling -- which read as a glitch ("Step 2" appearing twice).
+  // Only show the sticky copy once the full indicator has scrolled out
+  // of view, matching the original intent (see comment below).
+  if (!renderStepIndicator._observerSetUp){
+    renderStepIndicator._observerSetUp = true;
+    const stickyEl = document.getElementById('tabNavStepLabel');
+    if (stickyEl && 'IntersectionObserver' in window){
+      const obs = new IntersectionObserver((entries) => {
+        stickyEl.style.display = entries[0].isIntersecting ? 'none' : '';
+      }, { threshold: 0 });
+      obs.observe(el);
+    }
+  }
   const step1Done = hasPickedTeamThisSession;
   const step3Done = hasWatchedThisSession;
   const steps = [
@@ -3056,7 +3074,7 @@ function renderCfpRulesCards(container, team, ranked){
         <p class="matchup">${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}</p>
         <div class="meta-row">
           <span class="tier-tag">${r.tier}</span>
-          ${r.rootFor ? `<span class="root-tag for">Root for ${r.rootFor}</span>` : ''}
+          ${r.rootFor ? `<span class="root-tag for">${r.rootFor} winning helps you</span>` : ''}
           ${oddsText ? `<span class="odds">${oddsText}</span>` : ''}
         </div>
         <p class="reason">${r.reason}</p>
@@ -3806,6 +3824,11 @@ window.addEventListener('pageshow', function(e){
   if (e.persisted){
     const el = document.getElementById('wordmarkGuide');
     if (el) el.textContent = 'Highlights';
+    const spoilerEl = document.getElementById('spoilerToggle');
+    if (spoilerEl && spoilerEl.checked){
+      spoilerEl.checked = false;
+      spoilerEl.dispatchEvent(new Event('change'));
+    }
   }
 });
 
@@ -3883,7 +3906,7 @@ function buildShareText(team){
   const ranked = scoreWeek(team);
   const top5 = ranked.slice(0, 5);
   const lines = top5.map((r, i) => {
-    const header = `${i + 1}. ${r.score.toFixed(0)} Game Gravity™ · ${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
+    const header = `${i + 1}. ${r.score.toFixed(0)} Game Gravity™ · ${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}${r.rootFor ? ` — ${r.rootFor} winning helps you` : ''}`;
     const when = formatKickoff(r.kickoffUTC, team); // team's own local time, ET alongside
     const details = `   ${when}${r.network ? ` · ${r.network}` : ''}`;
     return `${header}\n${details}`;
