@@ -153,7 +153,7 @@
     margin:0;
     color:var(--chalk);
   }
-  .wordmark span{color:var(--amber);}
+  .wordmark span{color:var(--wordmark-accent, var(--amber));}
   .wordmark-tld{
     color:var(--chalk-dim) !important;
     font-size:0.42em;
@@ -1282,8 +1282,9 @@
     </div>
     <p class="site-why">Rooting for your team shouldn't cost a subscription — or the ending.</p>
     <div class="feature-pills">
-      <span class="feature-pill">Spoiler Free</span>
+      <span class="feature-pill">Game Gravity Curated</span>
       <span class="feature-pill">Subscription Free</span>
+      <span class="feature-pill">Spoiler Free</span>
     </div>
 
     <div class="ad-mobile-banner">
@@ -1437,11 +1438,11 @@
   </section>
 
   <section class="why-section" style="margin-top:56px;padding:24px;background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), var(--panel);border:1px solid var(--panel-line);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-    <h2 style="font-family:'Big Shoulders Display', sans-serif;font-weight:700;font-size:22px;color:var(--chalk);margin:0 0 18px;">Why we built this</h2>
+    <h2 style="font-family:'Big Shoulders Display', sans-serif;font-weight:700;font-size:22px;color:var(--chalk);margin:0 0 18px;">About Us</h2>
     <div style="display:grid;gap:18px;">
       <div>
         <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--amber);">Why</p>
-        <p style="margin:0;font-size:15px;color:var(--chalk-dim);line-height:1.6;">We believe rooting for your team shouldn't require a cable subscription, fast-forwarding through a three-hour broadcast, or the risk of stumbling into the score before you've watched a single play.</p>
+        <p style="margin:0;font-size:15px;color:var(--chalk-dim);line-height:1.6;">We believe rooting for your team shouldn't require a cable subscription, fast-forwarding through a recorded game, or the risk of stumbling into the score before you've watched a single play.</p>
       </div>
       <div>
         <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--amber);">How</p>
@@ -1897,6 +1898,7 @@ function applyTeamTheme(team){
     root.removeProperty('--field'); root.removeProperty('--field-line');
     root.removeProperty('--amber'); root.removeProperty('--amber-dim');
     root.removeProperty('--panel'); root.removeProperty('--panel-line');
+    root.removeProperty('--wordmark-accent');
     return;
   }
   let [c1, c2] = colors;
@@ -1914,6 +1916,15 @@ function applyTeamTheme(team){
   root.setProperty('--panel-line', mix(bg, '#FFFFFF', 0.22));
   root.setProperty('--amber', accent);
   root.setProperty('--amber-dim', mix(accent, '#000000', 0.35));
+
+  // The wordmark's "Highlights" span needs to visibly differ from the
+  // "ZeroSpoiler" chalk text next to it. Most team accents contrast fine,
+  // but a team with a pale/near-white accent can end up close enough to
+  // --chalk that the two halves of the wordmark blend together. Fall back
+  // to a neutral dark color for the wordmark specifically when that happens.
+  const chalkLum = relLuminance('#F7F5F0');
+  const wordmarkAccent = Math.abs(relLuminance(accent) - chalkLum) < 0.25 ? '#1A1A1A' : accent;
+  root.setProperty('--wordmark-accent', wordmarkAccent);
 }
 
 // Season-to-date results (for the Resume Connection / Head-to-Head
@@ -2200,28 +2211,6 @@ function scoreWeek(team){
       }
     });
 
-    // Tier: Conference Watch — a conference-mate looking good or bad
-    // shapes how the whole conference is perceived nationally, which
-    // is real resume-adjacent signal even between two teams you've
-    // never played. This is what makes an unranked team's list feel
-    // like ITS list, not just a copy of everyone else's.
-    if (myConference){
-      const homeConf = conferenceOf(home);
-      const awayConf = conferenceOf(away);
-      if ((homeConf === myConference || awayConf === myConference) && !(home === team || away === team)){
-        const confMate = homeConf === myConference ? home : away;
-        const opponent = homeConf === myConference ? away : home;
-        const confMateRank = rankOf(confMate);
-        const confidence = networkConfidence(confMate);
-        const base = 48;
-        const score = Math.min(92, Math.round(base * confidence * seasonMult * 10) / 10);
-        const reason = `${confMate} is a fellow ${myConference} team${confMateRank ? ` (#${confMateRank})` : ''} — a win over ${opponent} raises how strong the whole conference looks nationally, which reflects on ${team}${userRank ? ` (#${userRank})` : ''} too (${Math.round(confidence * 100)}% network confidence).`;
-        if (!best || score > best.score){
-          best = { game_id:id, home, away, tier:"Conference Watch", rootFor:confMate, reason, score, favoredTeam, winProb, link, kickoffUTC, network, venue, home_score, away_score };
-        }
-      }
-    }
-
     // Tier 3: National Resume Watch — this is what makes the app work
     // for the majority of FBS teams, not just ones sitting in a rank
     // window. A ranked team losing reshuffles who counts as a
@@ -2485,7 +2474,7 @@ let hasWatchedThisSession = false;
 // Single source of truth for step wording -- both the full indicator
 // and the sticky bar version pull from this exact same list, so they
 // can't say two different things for the same step ever again.
-const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Spoiler-Free Highlights'];
+const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Binge Highlights'];
 function renderStepIndicator(){
   const el = document.getElementById('stepIndicator');
   if (!el) return;
@@ -2862,7 +2851,7 @@ function renderSavedTab(){
     // games saved from the Game Gravity view have one) -- otherwise
     // the "Game Gravity" sort mode reorders the list with no visible
     // number explaining why, which reads as arbitrary.
-    const ggScore = (g.score !== null && g.score !== undefined) ? `<span class="saved-gg-score">${Math.round(g.score)} GG<span class="tm">™</span></span> ` : '';
+    const ggScore = (g.score !== null && g.score !== undefined) ? `<span class="saved-gg-score">${Math.round(g.score)} Game Gravity<span class="tm">™</span></span> ` : '';
     row.innerHTML = `
       <span class="matchup-text">${dragHandle}${g.awayRank ? '#' + g.awayRank + ' ' : ''}${g.away} @ ${g.homeRank ? '#' + g.homeRank + ' ' : ''}${g.home}</span>
       <span class="game-meta">${ggScore}${readyText}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
@@ -3808,6 +3797,18 @@ function cancelIntro(){ introCancelled = true; }
 conferenceSelect.addEventListener('mousedown', cancelIntro, { once:true });
 teamSelect.addEventListener('mousedown', cancelIntro, { once:true });
 
+window.addEventListener('pageshow', function(e){
+  // Mobile Safari's back-forward cache can freeze the page mid-animation
+  // (e.g. mid-intro, showing a team name in the wordmark) and restore
+  // that frozen DOM on return instead of re-running any JS. Force the
+  // wordmark back to the real site name whenever a page is restored
+  // from bfcache so it never gets stuck showing a team name.
+  if (e.persisted){
+    const el = document.getElementById('wordmarkGuide');
+    if (el) el.textContent = 'Highlights';
+  }
+});
+
 function runIntroAnimation(onComplete){
   const wordmarkEl = document.getElementById('wordmarkGuide');
   const maxBeat = 13;
@@ -3816,6 +3817,7 @@ function runIntroAnimation(onComplete){
   function step(){
     if (introCancelled){
       if (wordmarkEl) wordmarkEl.textContent = 'Highlights';
+      onComplete();
       return;
     }
     const team = teamAtRank(beat);
@@ -3881,7 +3883,7 @@ function buildShareText(team){
   const ranked = scoreWeek(team);
   const top5 = ranked.slice(0, 5);
   const lines = top5.map((r, i) => {
-    const header = `${i + 1}. ${r.score.toFixed(0)} GG\u2122 · ${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
+    const header = `${i + 1}. ${r.score.toFixed(0)} Game Gravity™ · ${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}${r.rootFor ? ` — Root for ${r.rootFor}` : ''}`;
     const when = formatKickoff(r.kickoffUTC, team); // team's own local time, ET alongside
     const details = `   ${when}${r.network ? ` · ${r.network}` : ''}`;
     return `${header}\n${details}`;
