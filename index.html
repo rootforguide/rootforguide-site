@@ -154,7 +154,7 @@
     margin:0;
     color:var(--chalk);
   }
-  .wordmark span{color:var(--wordmark-accent, var(--amber));}
+  #wordmarkGuide{color:var(--wordmark-accent, var(--amber));-webkit-text-stroke:1.5px var(--wordmark-stroke, #FFFFFF);paint-order:stroke fill;}
   .wordmark-tld{
     color:var(--chalk-dim) !important;
     font-size:0.42em;
@@ -1284,7 +1284,7 @@
     </div>
     <p class="site-why">Rooting for your team shouldn't cost a subscription — or the ending.</p>
     <div class="feature-pills">
-      <span class="feature-pill">Game Gravity Curated</span>
+      <span class="feature-pill">Game Gravity<span class="tm">™</span> Curated</span>
       <span class="feature-pill">Subscription Free</span>
       <span class="feature-pill">Spoiler Free</span>
     </div>
@@ -1321,7 +1321,7 @@
     <button class="tab-btn" data-tab="rankings">Rankings</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
-    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved — Spoiler-Free →</button>
+    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved →</button>
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
@@ -1934,7 +1934,7 @@ function applyTeamTheme(team){
     root.removeProperty('--field'); root.removeProperty('--field-line');
     root.removeProperty('--amber'); root.removeProperty('--amber-dim');
     root.removeProperty('--panel'); root.removeProperty('--panel-line');
-    root.removeProperty('--wordmark-accent');
+    root.removeProperty('--wordmark-accent'); root.removeProperty('--wordmark-stroke');
     return;
   }
   let [c1, c2] = colors;
@@ -1953,14 +1953,15 @@ function applyTeamTheme(team){
   root.setProperty('--amber', accent);
   root.setProperty('--amber-dim', mix(accent, '#000000', 0.35));
 
-  // The wordmark's "Highlights" span needs to visibly differ from the
-  // "ZeroSpoiler" chalk text next to it. Most team accents contrast fine,
-  // but a team with a pale/near-white accent can end up close enough to
-  // --chalk that the two halves of the wordmark blend together. Fall back
-  // to a neutral dark color for the wordmark specifically when that happens.
-  const chalkLum = relLuminance('#F7F5F0');
-  const wordmarkAccent = Math.abs(relLuminance(accent) - chalkLum) < 0.25 ? '#1A1A1A' : accent;
-  root.setProperty('--wordmark-accent', wordmarkAccent);
+  // The wordmark's "Highlights" span uses the team's actual primary
+  // color (c1 -- the school's real brand color, not whichever of the two
+  // this theme picked for general UI accents) with a contrasting outline,
+  // the same jersey-number treatment already used on the header icon
+  // (colored fill, opposite-luminance stroke) -- reads as genuine team
+  // color and pops against any background, unlike a flat fill that can
+  // wash out or blend into --chalk depending on the exact hue.
+  root.setProperty('--wordmark-accent', c1);
+  root.setProperty('--wordmark-stroke', relLuminance(c1) > 0.5 ? '#0A2557' : '#FFFFFF');
 }
 
 // Season-to-date results (for the Resume Connection / Head-to-Head
