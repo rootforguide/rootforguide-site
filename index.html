@@ -498,8 +498,8 @@
   .switch{
     position:relative;
     display:inline-block;
-    width:38px;
-    height:22px;
+    width:52px;
+    height:30px;
     flex-shrink:0;
   }
   .switch input{
@@ -512,27 +512,27 @@
     inset:0;
     background:var(--panel);
     border:1px solid var(--panel-line);
-    border-radius:22px;
-    transition:background .15s ease;
+    border-radius:30px;
+    transition:background .2s ease;
     box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
   }
   .switch-slider::before{
     content:"";
     position:absolute;
-    width:16px;
-    height:16px;
-    left:2px;
-    top:2px;
+    width:22px;
+    height:22px;
+    left:3px;
+    top:3px;
     background:var(--chalk);
     border-radius:50%;
-    transition:transform .15s ease;
-    box-shadow:0 1px 2px rgba(0,0,0,0.4);
+    transition:transform .28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow:0 1px 3px rgba(0,0,0,0.4);
   }
   .switch input:checked + .switch-slider{
     background:var(--amber);
   }
   .switch input:checked + .switch-slider::before{
-    transform:translateX(16px);
+    transform:translateX(22px);
   }
   .switch input:focus-visible + .switch-slider{
     outline:2px solid var(--amber);
@@ -2500,6 +2500,24 @@ spoilerToggle.addEventListener('change', () => {
   showScores = spoilerToggle.checked;
   render();
 });
+
+// Safety net: if the "Reveal scores" toggle is on, automatically switch
+// it back off once the visitor scrolls past the ad and deeper into the
+// game list -- reveal is meant to be a quick, deliberate peek near the
+// top, not something that stays on by accident while scrolling through
+// the rest of the (spoiler-sensitive) page.
+(function setupSpoilerScrollSafety(){
+  const ad = document.querySelector('.ad-mobile-banner') || document.querySelector('.ad-pillar');
+  if (!ad || !('IntersectionObserver' in window)) return;
+  const obs = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    if (!entry.isIntersecting && entry.boundingClientRect.top < 0 && spoilerToggle.checked){
+      spoilerToggle.checked = false;
+      spoilerToggle.dispatchEvent(new Event('change'));
+    }
+  }, { threshold: 0 });
+  obs.observe(ad);
+})();
 
 // Tab nav -- Game Gravity, Rankings, Schedule. Game Gravity is the
 // core feature and stays the default/active tab on load; the other
