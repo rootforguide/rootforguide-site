@@ -1392,6 +1392,7 @@
   </div>
 
   <div class="tab-panel" id="panelGameGravity">
+  <p class="gg-explainer" style="margin:0 0 16px;font-size:13px;color:var(--chalk-dim);line-height:1.5;">Game Gravity<span class="tm">™</span> ranks each game by how much it actually moves your team's real shot at the playoff — built from public rankings and betting-market data, highest score first.</p>
   <div class="results-head">
     <div class="results-title-group">
       <h2 id="resultsTitle">This week's games that matter</h2>
@@ -1758,9 +1759,42 @@ function formatPostTime(kickoffUTC, network, team){
 // highlights by team names + season only — never includes a score,
 // a result word ("beats", "upsets"), or a final margin, so the
 // query itself can't leak the outcome the way a news search would.
+function loadHighlightLength(){
+  try { return localStorage.getItem('cg_highlight_length'); } catch(e){ return null; }
+}
+function saveHighlightLength(len){
+  try { localStorage.setItem('cg_highlight_length', len); } catch(e){}
+}
+let highlightLength = loadHighlightLength() || 'medium';
 function watchLink(home, away){
-  const q = encodeURIComponent(`${away} vs ${home} extended highlights ${YEAR}`);
+  const phrase = highlightLength === 'short' ? 'highlights'
+    : highlightLength === 'long' ? 'full game highlights'
+    : 'extended highlights';
+  const q = encodeURIComponent(`${away} vs ${home} ${phrase} ${YEAR}`);
   return `https://www.youtube.com/results?search_query=${q}`;
+}
+function showHighlightLengthPicker(){
+  if (document.getElementById('highlightLengthPicker')) return;
+  const el = document.createElement('div');
+  el.id = 'highlightLengthPicker';
+  el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:var(--panel);border:1px solid var(--panel-line);border-radius:8px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:50;';
+  el.innerHTML = `
+    <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--chalk);">How long do you like your highlights?</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" data-len="short" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Short (~5 min)</button>
+      <button type="button" data-len="medium" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Medium (~10 min)</button>
+      <button type="button" data-len="long" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Long (~20 min)</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('.hl-len-btn');
+    if (!b) return;
+    highlightLength = b.dataset.len;
+    saveHighlightLength(highlightLength);
+    el.remove();
+    render();
+  });
 }
 
 // Full 2026 FBS membership (138 teams, 10 conferences + 2 independents)
@@ -2292,9 +2326,18 @@ let selectedSeason = '2026';
 const WORKER_URL = 'https://rootforguide-api.hbyf5dp6jh.workers.dev';
 let useLiveData = true; // easy kill-switch if the Worker ever needs to be bypassed
 
-CONFERENCE_NAMES.forEach(c => {
+// A curated, high-contrast palette so conferences are visually
+// distinguishable at a glance too, same idea as the per-team colors
+// below -- conferences don't have one official "brand color" the way
+// a school does, so this is a fixed, deliberately varied set rather
+// than derived from any team's colors.
+const CONFERENCE_COLOR_PALETTE = ['#C8102E','#002D72','#007A33','#FFB81C','#582C83','#00A3E0','#FF6900','#6F263D','#009CA6','#8A8D8F','#5C4033'];
+CONFERENCE_NAMES.forEach((c, i) => {
   const opt = document.createElement('option');
   opt.value = c; opt.textContent = c;
+  const color = CONFERENCE_COLOR_PALETTE[i % CONFERENCE_COLOR_PALETTE.length];
+  opt.style.backgroundColor = color;
+  opt.style.color = readableTextColor(color);
   conferenceSelect.appendChild(opt);
 });
 
@@ -2788,6 +2831,7 @@ document.addEventListener('click', (e) => {
   let data;
   try { data = JSON.parse(btn.dataset.gameData); } catch(err){ return; }
   toggleSavedGame(key, data);
+  if (isGameSaved(key) && !loadHighlightLength()) showHighlightLengthPicker();
   btn.classList.toggle('saved');
   btn.innerHTML = isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG;
   btn.title = isGameSaved(key) ? 'Remove from saved' : 'Save this game';
