@@ -3815,7 +3815,7 @@ async function render(){
     } catch (err){
       if (isStale()) return;
       if (!hasStaticFallback()){
-        container.innerHTML = `<p class="empty-note">Couldn't load live data for this week (${err.message}). Try a different week, or check back soon.</p>`;
+        container.innerHTML = `<p class="empty-note">Couldn't load live data for this week right now -- try a different week, or check back in a bit.</p>`;
         document.getElementById('weekTagRest').textContent = `· live data unavailable`;
         return;
       }
