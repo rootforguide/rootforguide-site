@@ -859,6 +859,43 @@
   .top25-table .trend-new{ color:var(--amber); font-weight:700; }
   .spoiler-mask{ color:var(--chalk-dim); letter-spacing:1px; }
   .record-note{ color:var(--amber); margin-left:1px; cursor:help; }
+  .top25-title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .stale-poll-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:13px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--amber);
+    background:color-mix(in srgb, var(--amber) 18%, transparent);
+    border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+    border-radius:20px;
+    padding:5px 14px;
+    white-space:nowrap;
+  }
+  .step-content-tag{
+    display:inline-block;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:12px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    color:var(--amber);
+    background:color-mix(in srgb, var(--amber) 15%, transparent);
+    border:1px solid color-mix(in srgb, var(--amber) 35%, transparent);
+    border-radius:20px;
+    padding:4px 12px;
+    margin:0 0 10px;
+  }
   .quick-peek{
     display:inline-block;
     cursor:pointer;
@@ -1310,10 +1347,11 @@
 
   <div class="step-indicator" id="stepIndicator"></div>
 
+  <p class="step-content-tag" id="step2ContentTag">Step 2: Pick Your Games</p>
   <div class="tab-nav" id="tabNav">
     <span class="tab-nav-step-label" id="tabNavStepLabel"></span>
     <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
-    <button class="tab-btn" data-tab="rankings">Rankings</button>
+    <button class="tab-btn" data-tab="rankings">Top 25</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
     <button class="tab-btn tab-btn-saved" data-tab="saved">Saved →</button>
@@ -1338,7 +1376,10 @@
 
   <div class="tab-panel" id="panelRankings" style="display:none;">
   <section class="top25-section" id="top25Section" style="display:none;">
-    <h2 class="national-ticker-title">Top 25</h2>
+    <div class="top25-title-row">
+      <h2 class="national-ticker-title">Top 25</h2>
+      <span class="stale-poll-badge" id="stalePollBadge" style="display:none;">⏱ <span id="stalePollBadgeText"></span></span>
+    </div>
     <p class="national-ticker-sub" id="top25Sub"></p>
     <div class="top25-table-wrap">
       <table class="top25-table">
@@ -1417,6 +1458,7 @@
   <div class="pinned-row" id="pinnedRow"></div>
 
   <div class="picker" id="pickerBlock">
+    <p class="step-content-tag">Step 1: Pick Your Team</p>
     <p class="field-label">Conference</p>
     <select id="conferenceSelect"></select>
 
@@ -1428,7 +1470,7 @@
   </div>
 
   <footer>
-    <p>Game Gravity<span class="tm">™</span> is built from public rankings and betting-market data — no invented metric, no black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
+    <p>Game Gravity<span class="tm">™</span> is our own formula — built from public rankings and betting-market data, not pulled from thin air, and never a black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
     <p class="legal-line">ZeroSpoilerHighlights.com is an independent fan resource and is not affiliated with, endorsed by, or sponsored by the NCAA, the College Football Playoff, any conference, or any school. Team names are used to identify real, publicly reported games and results. Betting lines shown are for informational context only — this site does not accept wagers. If you or someone you know has a gambling problem, call 1-800-GAMBLER. Must be 21+ to gamble where applicable. © 2026 ZeroSpoilerHighlights.com. All rights reserved.</p>
   </footer>
 </div>
@@ -2468,6 +2510,18 @@ if (!firstFavoritedTeam()){
     tabNav.parentNode.insertBefore(wrapper, tabNav);
   }
 }
+// Keeps the "Step 2" content tag directly above the tab bar no matter
+// where the picker block above ended up (new visitors get it moved up
+// near the top; returning visitors with a favorited team leave it near
+// the footer instead) -- this tag's only job is labeling the tab bar
+// itself as Step 2's content, so it always re-anchors right before it.
+{
+  const step2Tag = document.getElementById('step2ContentTag');
+  const tabNavEl = document.getElementById('tabNav');
+  if (step2Tag && tabNavEl && tabNavEl.parentNode){
+    tabNavEl.parentNode.insertBefore(step2Tag, tabNavEl);
+  }
+}
 
 conferenceSelect.addEventListener('change', () => {
   populateTeams(conferenceSelect.value);
@@ -3147,7 +3201,7 @@ function renderCfpRulesCards(container, team, ranked){
   // is the whole picture.
   const guide = document.createElement('div');
   guide.className = 'next-step-guide';
-  guide.innerHTML = `<p>Seen what you needed? Check the <a href="javascript:void(0)" onclick="switchTab('rankings')">Rankings</a> or your team's full <a href="javascript:void(0)" onclick="switchTab('schedule')">Schedule</a> next.</p>`;
+  guide.innerHTML = `<p>Seen what you needed? Check the <a href="javascript:void(0)" onclick="switchTab('rankings')">Top 25</a> or your team's full <a href="javascript:void(0)" onclick="switchTab('schedule')">Schedule</a> next.</p>`;
   container.appendChild(guide);
 }
 
@@ -3452,6 +3506,24 @@ function renderTop25(data, isPriorSnapshot){
   const pollLagNote = (POLL_WEEK !== WEEK) ? ` — this is the Week ${POLL_WEEK} poll; Week ${WEEK}'s hasn't been published yet` : '';
   const snapshotNote = isPriorSnapshot ? ` — showing Week ${data.week}'s full snapshot; turn on spoilers for this week's real update` : '';
   document.getElementById('top25Sub').textContent = `${data.pollSource} Poll · real records, trend, and Colley Matrix comparison${effectiveReveal ? '' : ' — records marked † are from entering last week\'s game; turn on spoilers to see trend, Colley rank, and last week\'s results'}${pollLagNote}${snapshotNote}`;
+  // A prominent, always-visible badge (not just the small subtext above)
+  // so it's unmistakable at a glance when the ranks on screen are from
+  // an older poll -- either because this is deliberately a prior-week
+  // snapshot (spoilers off) or the current week's poll simply hasn't
+  // published yet (spoilers on, but the poll itself lags the calendar).
+  const stalePollBadge = document.getElementById('stalePollBadge');
+  const stalePollBadgeText = document.getElementById('stalePollBadgeText');
+  if (stalePollBadge && stalePollBadgeText){
+    if (isPriorSnapshot){
+      stalePollBadgeText.textContent = `Week ${data.week} poll — not current`;
+      stalePollBadge.style.display = '';
+    } else if (POLL_WEEK !== WEEK){
+      stalePollBadgeText.textContent = `Week ${POLL_WEEK} poll — Week ${WEEK} not out yet`;
+      stalePollBadge.style.display = '';
+    } else {
+      stalePollBadge.style.display = 'none';
+    }
+  }
   const body = document.getElementById('top25Body');
   body.innerHTML = '';
   const mask = (content) => effectiveReveal ? content : '<span class="spoiler-mask">•••</span>';
