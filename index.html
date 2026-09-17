@@ -3667,20 +3667,36 @@ function renderSchedule(data, team){
 }
 
 let _lastScheduleKey = null;
+let _lastScheduleData = null;
 async function refreshSchedule(){
   const team = teamSelect.value;
   const section = document.getElementById('scheduleSection');
   if (!useLiveData){ section.style.display = 'none'; return; }
   const key = `${team}-${selectedSeason}`;
-  if (key === _lastScheduleKey) return;
-  _lastScheduleKey = key;
-  try {
-    const data = await fetchTeamSchedule(team, selectedSeason);
-    if (key !== `${teamSelect.value}-${selectedSeason}`) return; // stale
-    renderSchedule(data, team);
-  } catch (err) {
-    section.style.display = 'none';
+  if (key !== _lastScheduleKey) {
+    // Only marked as "handled" on actual success (below) -- same
+    // pattern as refreshLastNextWeek/refreshTop25, so a transient
+    // fetch failure gets a real retry on the next render() instead of
+    // being silently stuck.
+    try {
+      const data = await fetchTeamSchedule(team, selectedSeason);
+      if (key !== `${teamSelect.value}-${selectedSeason}`) return; // stale
+      _lastScheduleKey = key;
+      _lastScheduleData = data;
+    } catch (err) {
+      section.style.display = 'none';
+      _lastScheduleData = null;
+      return;
+    }
   }
+  // Re-render every time, even on a cache hit -- which cells stay
+  // masked vs. revealed depends on showScores (and which week is
+  // "current" depends on WEEK), neither of which is part of the cache
+  // key. This used to just return early whenever team+season matched
+  // the last fetch, which meant toggling spoilers ON did nothing at
+  // all here once a team's schedule was already loaded -- the whole
+  // view stayed stuck showing masked/peek results.
+  renderSchedule(_lastScheduleData, team);
 }
 
 function hasStaticFallback(){
