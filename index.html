@@ -607,6 +607,16 @@
     text-align:center;
     margin-top:2px;
   }
+  .score-sub-top{
+    /* Sits above the big score number now, not below it -- the number
+       alone can read like a spoiler at a glance, so "Game Gravity"
+       needs to register first, not as a caption underneath. */
+    font-size:10.5px;
+    font-weight:800;
+    color:var(--amber);
+    margin-top:0;
+    margin-bottom:3px;
+  }
 
   .matchup{
     font-family:'Big Shoulders Display', sans-serif;
@@ -3132,8 +3142,8 @@ function renderCfpRulesCards(container, team, ranked){
 
     card.innerHTML = `
       <div class="score-col">
+        <div class="score-sub score-sub-top">Game<br>Gravity<span class="tm">™</span></div>
         <div class="score-badge ${isYourTeam ? 'your-team' : ''} ${r.elimination ? 'elimination' : ''}">${r.score.toFixed(0)}</div>
-        <div class="score-sub">Game<br>Gravity<span class="tm">™</span></div>
       </div>
       <div class="content-col">
         ${r.elimination ? '<span class="elimination-tag">Win and in. Lose and out.</span><br>' : ''}
