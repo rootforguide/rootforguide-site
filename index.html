@@ -4071,7 +4071,14 @@ runIntroAnimation(() => {
     const resolvedWeek = Math.max(realWeek ?? 0, POLL_WEEK ?? 0) || realWeek;
     if (resolvedWeek === null || resolvedWeek === undefined || resolvedWeek === WEEK) return;
     WEEK = resolvedWeek;
-    weekSelect.value = WEEK;
+    // Rebuilds the dropdown's option list (not just its selected
+    // value) -- populateWeekSelectForLive() bakes "(current)" onto
+    // whichever week matched WEEK *at the time it ran*, which was
+    // right at page load when WEEK was still the placeholder value of
+    // 1. Only setting weekSelect.value here left "Week 1" permanently
+    // labeled "(current)" in the list even once the real current week
+    // came in and the selection itself moved off of it correctly.
+    populateWeekSelectForLive();
     spinWeekJersey(WEEK);
     render();
   }).catch(() => {}); // silently keep the Week 1 placeholder if this fails -- not worth surfacing an error for
