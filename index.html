@@ -2618,23 +2618,21 @@ function goToStepContent(stepNum){
   }
 }
 
-// Safety net: if the "Reveal scores" toggle is on, automatically switch
-// it back off once the visitor scrolls past the ad and deeper into the
-// game list -- reveal is meant to be a quick, deliberate peek near the
-// top, not something that stays on by accident while scrolling through
-// the rest of the (spoiler-sensitive) page.
-(function setupSpoilerScrollSafety(){
-  const ad = document.querySelector('.ad-mobile-banner') || document.querySelector('.ad-pillar');
-  if (!ad || !('IntersectionObserver' in window)) return;
-  const obs = new IntersectionObserver((entries) => {
-    const entry = entries[0];
-    if (!entry.isIntersecting && entry.boundingClientRect.top < 0 && spoilerToggle.checked){
-      spoilerToggle.checked = false;
-      spoilerToggle.dispatchEvent(new Event('change'));
-    }
-  }, { threshold: 0 });
-  obs.observe(ad);
-})();
+// REMOVED (was "auto-off once scrolled past the ad"): this used to
+// flip "Reveal scores" back off the instant the ad scrolled out of
+// view above the viewport. It made sense back when reveal only ever
+// affected content right at the top of the page, but Top 25 (and
+// Schedule, and Saved) all live BELOW that ad now -- so the one
+// natural thing to do after turning spoilers on, scrolling down to
+// actually look at them, was silently turning spoilers back off
+// before you got there. Confirmed live: toggle on, scroll down ~1
+// screen, toggle.checked was already false again. The bfcache-reset
+// (spoilers always start off on a fresh load/restore) already covers
+// the real "don't leave it on by accident" concern; this extra net
+// was actively fighting the feature, not protecting it. Do not
+// reintroduce a scroll-position-based auto-off without scoping it to
+// something that actually indicates the visitor left the page/tab,
+// not "scrolled down within the same view they're using right now."
 
 // Tab nav -- Game Gravity, Rankings, Schedule. Game Gravity is the
 // core feature and stays the default/active tab on load; the other
