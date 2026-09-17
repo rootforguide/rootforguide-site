@@ -1702,42 +1702,53 @@ function formatPostTime(kickoffUTC, network, team){
 // highlights by team names + season only — never includes a score,
 // a result word ("beats", "upsets"), or a final margin, so the
 // query itself can't leak the outcome the way a news search would.
-function loadHighlightLength(){
-  try { return localStorage.getItem('cg_highlight_length'); } catch(e){ return null; }
+function loadHighlightLengths(){
+  try { return JSON.parse(localStorage.getItem('cg_highlight_lengths')) || {}; } catch(e){ return {}; }
 }
-function saveHighlightLength(len){
-  try { localStorage.setItem('cg_highlight_length', len); } catch(e){}
+function highlightLengthForGame(gameKey){
+  return loadHighlightLengths()[gameKey] || 'medium';
 }
-let highlightLength = loadHighlightLength() || 'medium';
+function saveHighlightLengthForGame(gameKey, len){
+  try {
+    const all = loadHighlightLengths();
+    all[gameKey] = len;
+    localStorage.setItem('cg_highlight_lengths', JSON.stringify(all));
+  } catch(e){}
+}
 function watchLink(home, away){
-  const phrase = highlightLength === 'short' ? 'highlights'
-    : highlightLength === 'long' ? 'full game highlights'
+  const len = highlightLengthForGame(gameSaveKey(away, home));
+  const phrase = len === 'short' ? 'highlights'
+    : len === 'long' ? 'full game highlights'
     : 'extended highlights';
   const q = encodeURIComponent(`${away} vs ${home} ${phrase} ${YEAR}`);
   return `https://www.youtube.com/results?search_query=${q}`;
 }
-function showHighlightLengthPicker(){
-  if (document.getElementById('highlightLengthPicker')) return;
+function showHighlightLengthPicker(gameKey, away, home){
+  const existing = document.getElementById('highlightLengthPicker');
+  if (existing) existing.remove();
+  const current = highlightLengthForGame(gameKey);
   const el = document.createElement('div');
   el.id = 'highlightLengthPicker';
-  el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:var(--panel);border:1px solid var(--panel-line);border-radius:8px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:50;';
+  el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;max-width:360px;margin:0 auto;background:var(--panel);border:1px solid var(--panel-line);border-radius:8px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:50;';
+  const sizes = [['short','S','~5 min'],['medium','M','~10 min'],['long','L','~20 min']];
   el.innerHTML = `
-    <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--chalk);">How long do you like your highlights?</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button type="button" data-len="short" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Short (~5 min)</button>
-      <button type="button" data-len="medium" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Medium (~10 min)</button>
-      <button type="button" data-len="long" class="hl-len-btn" style="flex:1;min-width:90px;padding:8px;border-radius:6px;border:1px solid var(--panel-line);background:var(--field);color:var(--chalk);font-weight:600;font-size:13px;cursor:pointer;">Long (~20 min)</button>
+    <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:0.3px;">Highlight length</p>
+    <p style="margin:0 0 8px;font-size:13px;color:var(--chalk);">${away} @ ${home}</p>
+    <div style="display:flex;gap:8px;">
+      ${sizes.map(([val, label, sub]) => `
+        <button type="button" data-len="${val}" class="hl-len-btn${current === val ? ' active' : ''}" title="${sub}" style="flex:1;padding:8px;border-radius:6px;border:1px solid ${current === val ? 'var(--amber)' : 'var(--panel-line)'};background:${current === val ? 'var(--amber)' : 'var(--field)'};color:${current === val ? 'var(--field)' : 'var(--chalk)'};font-weight:700;font-size:15px;cursor:pointer;">${label}</button>
+      `).join('')}
     </div>
   `;
   document.body.appendChild(el);
   el.addEventListener('click', (e) => {
     const b = e.target.closest('.hl-len-btn');
     if (!b) return;
-    highlightLength = b.dataset.len;
-    saveHighlightLength(highlightLength);
+    saveHighlightLengthForGame(gameKey, b.dataset.len);
     el.remove();
     render();
   });
+  setTimeout(() => { if (document.getElementById('highlightLengthPicker') === el) el.remove(); }, 6000);
 }
 
 // Full 2026 FBS membership (138 teams, 10 conferences + 2 independents)
@@ -2748,7 +2759,8 @@ function markLinkWatched(link){
 // the "already watched" treatment (and the link markup itself) stays
 // visually consistent everywhere rather than each view rolling its
 // own slightly different version.
-function highlightsLinkHtml(link, label){
+function highlightsLinkHtml(away, home, label){
+  const link = watchLink(home, away);
   if (!link) return '';
   const safeLink = link.replace(/"/g, '&quot;');
   const watched = isLinkWatched(link);
@@ -2796,7 +2808,7 @@ document.addEventListener('click', (e) => {
   let data;
   try { data = JSON.parse(btn.dataset.gameData); } catch(err){ return; }
   toggleSavedGame(key, data);
-  if (isGameSaved(key) && !loadHighlightLength()) showHighlightLengthPicker();
+  if (isGameSaved(key)) showHighlightLengthPicker(key, data.away, data.home);
   btn.classList.toggle('saved');
   btn.innerHTML = isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG;
   btn.title = isGameSaved(key) ? 'Remove from saved' : 'Save this game';
@@ -2856,7 +2868,7 @@ function renderSavedTab(){
     row.className = 'national-game-row stacked saved-row';
     row.draggable = (savedSortMode === 'custom');
     row.dataset.key = g.key;
-    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
+    const highlightsLink = highlightsLinkHtml(g.away, g.home, 'Highlights →');
     const save = saveGameButton(g.key, g);
     const dragHandle = (savedSortMode === 'custom') ? '<span class="drag-handle" title="Drag to reorder">⠿</span> ' : '';
     // Same status badge the Game Gravity view uses ("Likely live now" /
@@ -2995,20 +3007,20 @@ function renderWatch(r, team, showScores){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">✓</span>
-      <span class="watch-text final-score">FINAL: ${rankBadgeForResult(r, "away")}${r.away} ${r.away_score} – ${r.home_score} ${rankBadgeForResult(r, "home")}${r.home}</span> ${highlightsLinkHtml(r.link, 'Highlights →')}${save}
+      <span class="watch-text final-score">FINAL: ${rankBadgeForResult(r, "away")}${r.away} ${r.away_score} – ${r.home_score} ${rankBadgeForResult(r, "home")}${r.home}</span> ${highlightsLinkHtml(r.away, r.home, 'Highlights →')}${save}
     </div>`;
   }
   if (showScores && !hasFinalScore){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">▶</span>
-      <span class="watch-text">${highlightsLinkHtml(r.link, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
+      <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
     </div>`;
   }
   return `${kickoffLine}
   <div class="watch-row">
     <span class="watch-icon">▶</span>
-    <span class="watch-text">${highlightsLinkHtml(r.link, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
+    <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
   </div>`;
 }
 
@@ -3258,7 +3270,7 @@ function renderLastWeekColumn(data){
     // Highlights link shown regardless of the spoiler toggle -- the
     // link itself reveals nothing (same rule as the Game Gravity
     // "Watch free, spoiler-safe" links); only the score stays gated.
-    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
+    const highlightsLink = highlightsLinkHtml(g.away, g.home, 'Highlights →');
     const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     // Pre-game odds -- no spoiler concern (the line existed before
     // kickoff), shown regardless of the toggle, same as everywhere
@@ -3276,7 +3288,7 @@ function renderLastWeekColumn(data){
     const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     row.innerHTML = `
       <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
-      <span class="game-meta">${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
+      <span class="game-meta">${highlightsLinkHtml(g.away, g.home, 'Highlights →')}${save}</span>
     `;
     list.appendChild(row);
   });
@@ -3349,7 +3361,7 @@ function gameCell(g, forOpponentLabel, teamName, teamRank){
     // this is always a PRIOR week's result by definition, so a peek
     // button can show unconditionally once the row itself is real.
     const peek = quickPeekButton(teamName, g.teamScore, g.opp, g.oppScore, 'skip-check');
-    const highlightsLink = highlightsLinkHtml(g.link, 'Highlights →');
+    const highlightsLink = highlightsLinkHtml(teamName, g.opp, 'Highlights →');
     const gameKey = gameSaveKey(teamName, g.opp);
     // Only this team's own rank is known here (it's the Top 25 row
     // we're already rendering) -- the prior opponent's rank isn't
@@ -3434,7 +3446,7 @@ function renderTop25(data, isPriorSnapshot){
     row.innerHTML = `
       <td>${t.displayRank}</td>
       <td>${mask(t.colleyRank ? '#' + t.colleyRank : '—')}</td>
-      <td>${t.school}</td>
+      <td>#${t.displayRank} ${t.school}</td>
       <td>${recordCell(t)}</td>
       <td>${mask(trendCell(t.trend))}</td>
       <td>${gameCell(t.lastGame, 'last', t.school, t.displayRank)}</td>
@@ -3591,7 +3603,7 @@ function renderSchedule(data, team){
       : '';
     row.innerHTML = `
       <span class="matchup-text">${resultPart}${tags}${matchupText}</span>
-      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${oddsText ? `<span class="odds">${oddsText}</span> ` : ''}${highlightsLinkHtml(g.link, 'Highlights →')}${save}${calendarButtonHtml(awayTeam, homeTeam, g.kickoffUTC, g.network)}${shareGameButton(awayTeam, homeTeam, g.kickoffUTC, g.network)}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${oddsText ? `<span class="odds">${oddsText}</span> ` : ''}${highlightsLinkHtml(awayTeam, homeTeam, 'Highlights →')}${save}${calendarButtonHtml(awayTeam, homeTeam, g.kickoffUTC, g.network)}${shareGameButton(awayTeam, homeTeam, g.kickoffUTC, g.network)}</span>
     `;
     list.appendChild(row);
   });
@@ -3656,7 +3668,7 @@ function renderUpsets(data){
     const save = saveGameButton(gameSaveKey(g.away, g.home), { away:g.away, home:g.home, kickoffUTC:g.kickoffUTC, link:g.link, network:g.network, score:null, awayRank:g.awayRank ?? null, homeRank:g.homeRank ?? null });
     row.innerHTML = `
       <span class="matchup-text">${g.away} @ ${g.home} — you're going to want to see this</span>
-      <span class="game-meta">${highlightsLinkHtml(g.link, 'Highlights →')}${save}</span>
+      <span class="game-meta">${highlightsLinkHtml(g.away, g.home, 'Highlights →')}${save}</span>
     `;
     list.appendChild(row);
   });
