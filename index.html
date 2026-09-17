@@ -1254,6 +1254,17 @@
     .score-sub{font-size:8px;}
     .matchup{font-size:19px;}
   }
+
+  @media (max-width:360px){
+    /* Narrow phones (iPhone SE/5-width, 320-359px): the 480px
+       breakpoint's sizes still overflow and push the week-jersey
+       icon off the right edge of the screen. Shrink further so
+       wordmark + jersey fit on one line. */
+    .wordmark{font-size:26px;}
+    .brand-group{gap:6px;}
+    .logo-jersey{width:26px; height:26px;}
+    .logo-jersey-number{font-size:11px;}
+  }
 </style>
 </head>
 <body>
