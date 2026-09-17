@@ -3831,7 +3831,7 @@ async function render(){
       if (isStale()) return; // a newer render started while this was in flight — drop this one
       container.innerHTML = '';
 
-      document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team} — who to root for`;
+      document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team}`;
       document.getElementById('weekTagRest').textContent = `· ${data.pollSource || pollSource(WEEK)} Poll · Make the Playoff · live`;
       renderSnapshot(team, data.results || [], showScores, data.lastGame);
       if (!data.results || data.results.length === 0){
@@ -3854,7 +3854,7 @@ async function render(){
 
   const ranked = scoreWeek(team);
 
-  document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team} — who to root for`;
+  document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team}`;
   document.getElementById('weekTagRest').textContent = `· ${pollSource(WEEK)} Poll · Make the Playoff`;
   renderSnapshot(team, ranked, showScores);
 
