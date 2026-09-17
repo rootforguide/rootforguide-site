@@ -1174,58 +1174,6 @@
     color:var(--chalk-dim);
   }
   .next-step-guide a{ font-weight:700; }
-  .suggestion-box{
-    margin-top:56px;
-    padding:20px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), var(--panel);
-    border:1px solid var(--panel-line);
-    border-radius:8px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.25);
-  }
-  .suggestion-title{
-    font-family:'Big Shoulders Display', sans-serif;
-    font-weight:700;
-    font-size:20px;
-    color:var(--chalk);
-    margin:0 0 4px;
-  }
-  .suggestion-sub{
-    font-size:14px;
-    color:var(--chalk-dim);
-    margin:0 0 14px;
-  }
-  .suggestion-input{
-    width:100%;
-    font-family:'Source Sans 3', sans-serif;
-    font-size:15px;
-    color:var(--chalk);
-    background:var(--field);
-    border:1px solid var(--panel-line);
-    border-radius:4px;
-    padding:10px 12px;
-    resize:vertical;
-    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
-  }
-  .suggestion-input:focus{outline:2px solid var(--amber); outline-offset:1px;}
-  .suggestion-submit{
-    margin-top:12px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.06)), var(--amber);
-    border:1px solid var(--panel-line);
-    color:var(--field);
-    font-weight:700;
-    font-size:14px;
-    padding:9px 18px;
-    border-radius:4px;
-    cursor:pointer;
-    box-shadow:0 2px 6px rgba(0,0,0,0.25);
-  }
-  .suggestion-submit:hover{ filter:brightness(1.08); }
-  .suggestion-note{
-    margin:10px 0 0;
-    font-size:13px;
-    color:var(--chalk-dim);
-  }
-
   footer{
     margin-top:56px;
     padding-top:20px;
@@ -1452,32 +1400,6 @@
     <button class="picker-continue-btn" id="pickerContinueBtn">This is my team →</button>
   </div>
   </div>
-
-  <section class="suggestion-box">
-    <p class="suggestion-title">See something dead wrong, or want a real feature?</p>
-    <p class="suggestion-sub">Bad data, a broken feature, a real feature idea we haven't thought of — that's what actually helps.</p>
-    <textarea id="suggestionText" class="suggestion-input" rows="3" placeholder="Type your suggestion here…" maxlength="1000"></textarea>
-    <button class="suggestion-submit" id="suggestionSubmit">Send Feedback</button>
-    <p class="suggestion-note" id="suggestionNote"></p>
-  </section>
-
-  <section class="why-section" style="margin-top:56px;padding:24px;background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), var(--panel);border:1px solid var(--panel-line);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-    <h2 style="font-family:'Big Shoulders Display', sans-serif;font-weight:700;font-size:22px;color:var(--chalk);margin:0 0 18px;">About Us</h2>
-    <div style="display:grid;gap:18px;">
-      <div>
-        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--amber);">Why</p>
-        <p style="margin:0;font-size:15px;color:var(--chalk-dim);line-height:1.6;">We believe rooting for your team shouldn't require a cable subscription, fast-forwarding through a recorded game, or the risk of stumbling into the score before you've watched a single play.</p>
-      </div>
-      <div>
-        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--amber);">How</p>
-        <p style="margin:0;font-size:15px;color:var(--chalk-dim);line-height:1.6;">So we built Game Gravity<span class="tm">™</span> — a weekly score, built from public rankings and betting-market data, that shows exactly how much each game affects your team's real path to the playoff.</p>
-      </div>
-      <div>
-        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--amber);">What</p>
-        <p style="margin:0;font-size:15px;color:var(--chalk-dim);line-height:1.6;">The result: a spoiler-free rundown of only the games that matter to your team, with direct links to the highlights. No subscription, no fast-forwarding, no spoilers.</p>
-      </div>
-    </div>
-  </section>
 
   <footer>
     <p>Game Gravity<span class="tm">™</span> is built from public rankings and betting-market data — no invented metric, no black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
@@ -3963,26 +3885,6 @@ function runIntroAnimation(onComplete){
   }
   step();
 }
-
-// Suggestion box — no backend on a static site, so this opens the
-// visitor's own email client with the message pre-filled, addressed
-// to a real inbox you check. Swap FEEDBACK_EMAIL for your real
-// address before this goes live.
-const FEEDBACK_EMAIL = "graydon.wd@gmail.com";
-document.getElementById('suggestionSubmit').addEventListener('click', () => {
-  const textEl = document.getElementById('suggestionText');
-  const noteEl = document.getElementById('suggestionNote');
-  const text = textEl.value.trim();
-  if (!text){
-    noteEl.textContent = "Type something first — even a couple words helps.";
-    return;
-  }
-  const subject = encodeURIComponent("ZeroSpoilerHighlights.com Suggestion");
-  const body = encodeURIComponent(text);
-  window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`;
-  noteEl.textContent = "Opening your email app to send this — thank you.";
-  textEl.value = '';
-});
 
 // Share — the growth mechanic. Builds a plain-text summary of the
 // team's top 5 Game Gravity games. Deliberately leaves out the
