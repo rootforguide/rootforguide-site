@@ -1388,7 +1388,7 @@
   <p class="step-content-tag" id="step2ContentTag" style="margin-top:20px;">Step 2: Pick Your Games</p>
   <div class="tab-nav" id="tabNav">
     <span class="tab-nav-step-label" id="tabNavStepLabel"></span>
-    <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
+    <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span> <span class="info-icon" id="ggExplainerInfoIcon" tabindex="0" role="button" aria-label="How does Game Gravity work? Click to see an explanation.">i</span></button>
     <button class="tab-btn" data-tab="rankings">Top 25</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
@@ -1480,7 +1480,6 @@
   </div>
 
   <div class="tab-panel" id="panelGameGravity">
-  <p class="gg-explainer-label" style="margin:0 0 16px;font-size:13px;font-weight:700;color:var(--chalk-dim);display:flex;align-items:center;gap:6px;">Game Gravity<span class="tm">™</span> <span class="info-icon" id="ggExplainerInfoIcon" tabindex="0" role="button" aria-label="How does Game Gravity work? Click to see an explanation.">i</span></p>
   <div class="info-popover" id="ggExplainerInfoPopover" style="display:none;">Game Gravity<span class="tm">™</span> ranks each game by how much it actually moves your team's real shot at the playoff — built from public rankings and betting-market data, highest score first.</div>
   <div class="results-head">
     <div class="results-title-group">
@@ -2042,12 +2041,12 @@ function applyTeamTheme(team){
   // color (c1 -- the school's real brand color, not whichever of the two
   // this theme picked for general UI accents) with a contrasting outline,
   // the same jersey-number treatment already used on the header icon.
-  // c1 is usually also what --field (the page background) is set to
-  // above, so using it at full strength for the fill made the letters
-  // nearly disappear into the background -- only the outline showed.
-  // Lightening it keeps it clearly the team's own color while actually
-  // being visible against a background that's often that same color.
-  const wordmarkFill = mix(c1, '#FFFFFF', 0.4);
+  // c1 only needs lightening when it's ALSO what got assigned to --field
+  // above (bg === c1) -- that's the one case where the letters would
+  // vanish into the background. Otherwise c1 already reads clearly on
+  // its own, and lightening it unconditionally just washed the team's
+  // real color out (e.g. Texas Tech's scarlet reading as salmon/pink).
+  const wordmarkFill = (bg === c1) ? mix(c1, '#FFFFFF', 0.4) : c1;
   root.setProperty('--wordmark-accent', wordmarkFill);
   root.setProperty('--wordmark-stroke', relLuminance(wordmarkFill) > 0.5 ? '#0A2557' : '#FFFFFF');
 }
