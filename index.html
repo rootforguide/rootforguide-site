@@ -548,7 +548,12 @@
     top:3px;
     background:var(--chalk);
     border-radius:50%;
-    transition:transform .32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Delayed to start exactly when the track's own .25s color
+       transition (below) finishes -- the thumb only starts sliding
+       once the color change has fully landed, like the Disney+ logo's
+       shooting star only starting its sweep after the mark itself has
+       settled, rather than both happening on top of each other. */
+    transition:transform .32s cubic-bezier(0.34, 1.56, 0.64, 1) .25s;
     box-shadow:0 1px 3px rgba(0,0,0,0.4);
   }
   .switch input:checked + .switch-slider{
@@ -2750,6 +2755,15 @@ function switchTab(tabName){
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
   positionTabAdSlot(tabName);
+  // Repositioning the ad after each panel's own heading isn't enough on
+  // its own -- the ad can be tall enough to fill the whole viewport by
+  // itself, so if a visitor was scrolled down to it already, switching
+  // tabs still looked like nothing happened (the new panel's heading
+  // was there, just scrolled out of view above). Bring the tab bar back
+  // to the top of the viewport on every switch so the active panel's
+  // own content is always what's visible right after tapping a tab.
+  const tabNavEl = document.getElementById('tabNav');
+  if (tabNavEl) tabNavEl.scrollIntoView({block:'start'});
   if (tabName === 'saved') renderSavedTab();
 }
 positionTabAdSlot(_activeTabName || 'gamegravity');
