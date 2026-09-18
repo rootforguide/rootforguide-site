@@ -605,7 +605,10 @@
     animation:spoilerIntroTrack 0.9s ease 0.15s both;
   }
   .setting-block-spoiler.spoiler-intro-play .switch-slider::before{
-    animation:spoilerIntroThumb 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+    /* Starts right when the track's color animation finishes (0.15s
+       delay + 0.9s duration = 1.05s) -- sequenced AFTER the color
+       change settles, not simultaneous with it. */
+    animation:spoilerIntroThumb 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1.05s both;
   }
   .step-item-clickable{ cursor:pointer; }
   .step-item-clickable:hover{ opacity:0.8; }
@@ -1299,7 +1302,7 @@
   }
 
   @media (max-width:480px){
-    .wordmark{font-size:32px;}
+    .wordmark{font-size:36px;}
     .brand-group{gap:8px;}
     .logo-jersey{width:32px; height:32px;}
     .logo-jersey-number{font-size:13px;}
@@ -1316,7 +1319,7 @@
        breakpoint's sizes still overflow and push the week-jersey
        icon off the right edge of the screen. Shrink further so
        wordmark + jersey fit on one line. */
-    .wordmark{font-size:26px;}
+    .wordmark{font-size:32px;}
     .brand-group{gap:6px;}
     .logo-jersey{width:26px; height:26px;}
     .logo-jersey-number{font-size:11px;}
@@ -1392,7 +1395,7 @@
 
   <div class="step-indicator" id="stepIndicator"></div>
 
-  <p class="step-content-tag" id="step2ContentTag">Step 2: Pick Your Games</p>
+  <p class="step-content-tag" id="step2ContentTag" style="margin-top:20px;">Step 2: Pick Your Games</p>
   <div class="tab-nav" id="tabNav">
     <span class="tab-nav-step-label" id="tabNavStepLabel"></span>
     <button class="tab-btn active" data-tab="gamegravity">Game Gravity<span class="tm">™</span></button>
@@ -1477,7 +1480,8 @@
   </div>
 
   <div class="tab-panel" id="panelGameGravity">
-  <p class="gg-explainer" style="margin:0 0 16px;font-size:13px;color:var(--chalk-dim);line-height:1.5;">Game Gravity<span class="tm">™</span> ranks each game by how much it actually moves your team's real shot at the playoff — built from public rankings and betting-market data, highest score first.</p>
+  <p class="gg-explainer-label" style="margin:0 0 16px;font-size:13px;font-weight:700;color:var(--chalk-dim);display:flex;align-items:center;gap:6px;">Game Gravity<span class="tm">™</span> <span class="info-icon" id="ggExplainerInfoIcon" tabindex="0" role="button" aria-label="How does Game Gravity work? Click to see an explanation.">i</span></p>
+  <div class="info-popover" id="ggExplainerInfoPopover" style="display:none;">Game Gravity<span class="tm">™</span> ranks each game by how much it actually moves your team's real shot at the playoff — built from public rankings and betting-market data, highest score first.</div>
   <div class="results-head">
     <div class="results-title-group">
       <h2 id="resultsTitle">This week's games that matter</h2>
@@ -2759,6 +2763,21 @@ document.addEventListener('click', (e) => {
 document.getElementById('cfpOddsInfoIcon').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') document.getElementById('cfpOddsInfoIcon').click();
 });
+document.addEventListener('click', (e) => {
+  const ggIcon = e.target.closest && e.target.closest('#ggExplainerInfoIcon');
+  const ggPop = document.getElementById('ggExplainerInfoPopover');
+  if (ggIcon){
+    e.stopPropagation();
+    ggPop.style.display = ggPop.style.display === 'none' ? '' : 'none';
+    return;
+  }
+  if (ggPop && ggPop.style.display !== 'none' && !e.target.closest('#ggExplainerInfoPopover')){
+    ggPop.style.display = 'none';
+  }
+});
+document.getElementById('ggExplainerInfoIcon').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') document.getElementById('ggExplainerInfoIcon').click();
+});
 // HARD RULE, not just current behavior — read before "improving" this:
 // this status is computed from ONE flat, fixed duration (3.5 hrs)
 // applied identically to every game, with zero awareness of what's
@@ -4017,7 +4036,7 @@ async function render(){
       container.innerHTML = '';
 
       document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team}`;
-      document.getElementById('weekTagRest').textContent = `· ${data.pollSource || pollSource(WEEK)} Poll · Make the Playoff · live`;
+      document.getElementById('weekTagRest').textContent = '';
       renderSnapshot(team, data.results || [], showScores, data.lastGame);
       if (!data.results || data.results.length === 0){
         container.innerHTML = '<p class="empty-note">No games with meaningful impact found for this week.</p>';
@@ -4040,7 +4059,7 @@ async function render(){
   const ranked = scoreWeek(team);
 
   document.getElementById('resultsTitle').innerHTML = `${rankBadge(team, true)}${team}`;
-  document.getElementById('weekTagRest').textContent = `· ${pollSource(WEEK)} Poll · Make the Playoff`;
+  document.getElementById('weekTagRest').textContent = '';
   renderSnapshot(team, ranked, showScores);
 
   if (ranked.length === 0){
