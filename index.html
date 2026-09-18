@@ -44,7 +44,7 @@
     --panel-line:#2A4C93;
   }
   *{box-sizing:border-box;}
-  html,body{overflow-x:hidden;}
+  html{overflow-x:hidden;}
   /* Global link color -- without this, any <a> without a more
      specific rule falls back to the browser default (blue unvisited,
      purple visited), which reads as tacky against this dark navy/red
@@ -73,7 +73,7 @@
   .ad-pillar{
     display:none; /* only shown on wide viewports, see media query below */
     position:fixed;
-    top:140px;
+    top:40px;
     width:160px;
     height:600px;
     background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.08)), var(--panel);
