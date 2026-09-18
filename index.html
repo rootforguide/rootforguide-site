@@ -1381,16 +1381,6 @@
         </label>
       </div>
     </div>
-
-    <div class="ad-mobile-banner">
-      <span class="ad-label">Advertisement</span>
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-3642989962440359"
-           data-ad-slot="0000000000"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-    </div>
   </header>
 
   <div class="step-indicator" id="stepIndicator"></div>
@@ -1403,6 +1393,16 @@
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
     <button class="tab-btn tab-btn-saved" data-tab="saved">Saved →</button>
+  </div>
+
+  <div class="ad-mobile-banner">
+    <span class="ad-label">Advertisement</span>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3642989962440359"
+         data-ad-slot="0000000000"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
@@ -1520,6 +1520,16 @@
 
     <button class="picker-continue-btn" id="pickerContinueBtn">This is my team →</button>
   </div>
+  </div>
+
+  <div class="ad-mobile-banner">
+    <span class="ad-label">Advertisement</span>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3642989962440359"
+         data-ad-slot="0000000000"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
   </div>
 
   <footer>
@@ -3289,7 +3299,7 @@ function renderCfpRulesCards(container, team, ranked){
         <p class="matchup">${rankBadgeForResult(r, "away")}${r.away} @ ${rankBadgeForResult(r, "home")}${r.home}</p>
         <div class="meta-row">
           <span class="tier-tag">${r.tier}</span>
-          ${r.rootFor ? `<span class="root-tag for">${r.rootFor} winning helps you</span>` : ''}
+          ${(r.rootFor && !isYourTeam) ? `<span class="root-tag for">${r.rootFor} winning helps you</span>` : ''}
           ${oddsText ? `<span class="odds">${oddsText}</span>` : ''}
         </div>
         <p class="reason">${r.reason}</p>
