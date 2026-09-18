@@ -1395,7 +1395,7 @@
     <button class="tab-btn tab-btn-saved" data-tab="saved">Saved →</button>
   </div>
 
-  <div class="ad-mobile-banner">
+  <div class="ad-mobile-banner" id="tabAdSlot">
     <span class="ad-label">Advertisement</span>
     <ins class="adsbygoogle"
          style="display:block"
@@ -2728,6 +2728,19 @@ document.addEventListener('click', (e) => {
 });
 
 let _activeTabName = 'gamegravity';
+function positionTabAdSlot(tabName){
+  // The ad used to live as one shared block above ALL tab panels, so
+  // switching tabs while scrolled to it showed no visible change --
+  // the content that actually differs was further down, out of view.
+  // Move it to just after the active panel's own first heading instead,
+  // so that heading is always the first thing a visitor sees right
+  // after tapping a tab.
+  const adSlot = document.getElementById('tabAdSlot');
+  const activePanel = document.getElementById(TAB_PANELS[tabName]);
+  if (adSlot && activePanel && activePanel.firstElementChild){
+    activePanel.insertBefore(adSlot, activePanel.firstElementChild.nextSibling);
+  }
+}
 function switchTab(tabName){
   _activeTabName = tabName;
   Object.keys(TAB_PANELS).forEach(name => {
@@ -2737,8 +2750,10 @@ function switchTab(tabName){
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
+  positionTabAdSlot(tabName);
   if (tabName === 'saved') renderSavedTab();
 }
+positionTabAdSlot(_activeTabName || 'gamegravity');
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
