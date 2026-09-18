@@ -132,11 +132,11 @@
     gap:14px;
     flex-wrap:wrap;
   }
-  .header-actions{
-    margin-left:auto;
+  .footer-actions{
     display:flex;
     align-items:center;
-    gap:4px;
+    gap:10px;
+    margin-bottom:16px;
   }
   .brand-group{
     display:flex;
@@ -1374,16 +1374,7 @@
           <span class="logo-jersey-number" id="weekJerseyNumber">–</span>
         </div>
       </div>
-      <div class="header-actions">
-        <button class="share-btn" id="installBtn" title="Add to Home Screen" aria-label="Add to Home Screen" style="display:none;">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-        </button>
-        <button class="share-btn" id="siteShareBtn" title="Share ZeroSpoilerHighlights.com" aria-label="Share this site">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
-        </button>
-      </div>
     </div>
-    <div class="info-popover" id="installInstructionsPopover" style="display:none;margin:10px 0 0;">Tap the Share icon in your browser's toolbar, then choose "Add to Home Screen".</div>
     <p class="site-why">Rooting for your team shouldn't cost a subscription — or the ending.</p>
     <div class="feature-pills">
       <span class="feature-pill">Game Gravity<span class="tm">™</span> Curated</span>
@@ -1554,6 +1545,15 @@
   </div>
 
   <footer>
+    <div class="footer-actions">
+      <button class="share-btn" id="installBtn" title="Add to Home Screen" aria-label="Add to Home Screen" style="display:none;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </button>
+      <button class="share-btn" id="siteShareBtn" title="Share ZeroSpoilerHighlights.com" aria-label="Share this site">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+      </button>
+    </div>
+    <div class="info-popover" id="installInstructionsPopover" style="display:none;margin:0 0 16px;">Tap the Share icon in your browser's toolbar, then choose "Add to Home Screen".</div>
     <p>Game Gravity<span class="tm">™</span> is our own formula — built from public rankings and betting-market data, not pulled from thin air, and never a black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
     <p class="legal-line">ZeroSpoilerHighlights.com is an independent fan resource and is not affiliated with, endorsed by, or sponsored by the NCAA, the College Football Playoff, any conference, or any school. Team names are used to identify real, publicly reported games and results. Betting lines shown are for informational context only — this site does not accept wagers. If you or someone you know has a gambling problem, call 1-800-GAMBLER. Must be 21+ to gamble where applicable. © 2026 ZeroSpoilerHighlights.com. All rights reserved.</p>
   </footer>
