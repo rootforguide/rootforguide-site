@@ -3008,12 +3008,13 @@ function markLinkWatched(link){
 // the "already watched" treatment (and the link markup itself) stays
 // visually consistent everywhere rather than each view rolling its
 // own slightly different version.
-function highlightsLinkHtml(away, home, label){
+function highlightsLinkHtml(away, home, label, icon){
   const link = watchLink(home, away);
   if (!link) return '';
   const safeLink = link.replace(/"/g, '&quot;');
   const watched = isLinkWatched(link);
-  return ` <a href="${safeLink}" target="_blank" rel="noopener" class="highlights-link${watched ? ' watched' : ''}" data-link="${safeLink}">${label}</a>`;
+  const prefix = icon ? `${icon} ` : '';
+  return ` <a href="${safeLink}" target="_blank" rel="noopener" class="highlights-link${watched ? ' watched' : ''}" data-link="${safeLink}">${prefix}${label}</a>`;
 }
 document.addEventListener('click', (e) => {
   const a = e.target.closest && e.target.closest('.highlights-link');
@@ -3262,14 +3263,12 @@ function renderWatch(r, team, showScores){
   if (showScores && !hasFinalScore){
     return `${kickoffLine}
     <div class="watch-row">
-      <span class="watch-icon">▶</span>
-      <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
+      <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →', '▶')} <span class="eta">Up by ${postTime} · not final yet</span></span>${save}
     </div>`;
   }
   return `${kickoffLine}
   <div class="watch-row">
-    <span class="watch-icon">▶</span>
-    <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
+    <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →', '▶')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
   </div>`;
 }
 
