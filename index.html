@@ -979,9 +979,9 @@
     cursor:pointer;
     user-select:none;
     -webkit-user-select:none;
-    padding:1px 4px;
-    border-radius:4px;
-    opacity:0.6;
+    padding:3px 6px;
+    border-radius:5px;
+    opacity:0.7;
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:#4ade80; }
@@ -1873,7 +1873,16 @@ function watchLink(home, away){
     : len === 'long' ? 'full game highlights'
     : 'extended highlights';
   const q = encodeURIComponent(`${away} vs ${home} ${phrase} ${YEAR}`);
-  return `https://www.youtube.com/results?search_query=${q}`;
+  // A trailing dot after "com" (a technically-valid, fully-qualified
+  // hostname -- DNS treats "youtube.com." exactly the same as
+  // "youtube.com") makes this string not literally match "youtube.com"
+  // the way the YouTube app's Android/iOS deep-link registration
+  // expects. That mismatch is what keeps this link opening in the
+  // browser itself instead of handing off to the app -- which matters
+  // here specifically because the app's autoplay/related-videos rail
+  // is far more likely to surface a real score or spoiler than the
+  // plain browser search results this points to.
+  return `https://www.youtube.com./results?search_query=${q}`;
 }
 function showHighlightLengthPicker(gameKey, away, home){
   const existing = document.getElementById('highlightLengthPicker');
@@ -3055,8 +3064,8 @@ document.addEventListener('click', (e) => {
     }, WATCHED_CLICK_TTL_MS + 500);
   }
 });
-const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
-const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-5px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-5px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function saveGameButton(gameKey, gameData){
   const safeKey = gameKey.replace(/"/g, '&quot;');
   const safeData = JSON.stringify(gameData).replace(/"/g, '&quot;');
@@ -3189,14 +3198,17 @@ document.addEventListener('drop', (e) => {
 });
 // "Watch all" -- opens every saved game's highlights link at once, so
 // getting through a saved list takes one click instead of one per
-// game. Browsers may still block some as popups since they weren't
-// each triggered by their own direct click; the small stagger below
-// reduces that, but isn't a guarantee across every browser.
+// game.
 function watchAllSaved(){
   const links = sortedSavedGames().map(g => g.link).filter(Boolean);
-  links.forEach((link, i) => {
-    setTimeout(() => window.open(link, '_blank', 'noopener'), i * 150);
-  });
+  // Every window.open() below fires synchronously, still inside the
+  // click handler that triggered this -- popup blockers only allow
+  // windows opened directly within a user gesture's own call stack.
+  // The previous setTimeout stagger pushed every open but the first
+  // OUTSIDE that stack, so browsers silently blocked the rest and
+  // only ever the first saved game actually opened. Calling them all
+  // synchronously, right here, is what lets the whole list open.
+  links.forEach(link => window.open(link, '_blank', 'noopener'));
 }
 function clearAllSaved(){
   if (savedGames.length === 0) return;
