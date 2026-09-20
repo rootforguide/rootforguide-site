@@ -1585,6 +1585,10 @@
     <div class="info-popover" id="installInstructionsPopover" style="display:none;margin:0 0 16px;">Tap the Share icon in your browser's toolbar, then choose "Add to Home Screen".</div>
     <p>Game Gravity<span class="tm">™</span> is our own formula — built from public rankings and betting-market data, not pulled from thin air, and never a black box. Scores also rise as the season goes on: the same situation carries more weight in Week 10 than it would have in Week 3, since there's less season left to fix it. A 100 is rare on purpose — it only shows up when your team is sitting right on the cutoff line late enough that a loss ends the season outright.</p>
     <p class="legal-line">ZeroSpoilerHighlights.com is an independent fan resource and is not affiliated with, endorsed by, or sponsored by the NCAA, the College Football Playoff, any conference, or any school. Team names are used to identify real, publicly reported games and results. Betting lines shown are for informational context only — this site does not accept wagers. If you or someone you know has a gambling problem, call 1-800-GAMBLER. Must be 21+ to gamble where applicable. © 2026 ZeroSpoilerHighlights.com. All rights reserved.</p>
+    <p class="legal-line"><button type="button" id="privacyBtn" aria-expanded="false" style="background:none;border:none;padding:0;margin-top:6px;font:inherit;font-size:11px;color:var(--amber);text-decoration:underline;cursor:pointer;">Privacy Policy</button></p>
+    <div class="info-popover" id="privacyPopover" style="display:none;">
+      This site doesn’t require an account and doesn’t collect or store personal information on our servers. Your saved games, watched-highlights history, and pinned team live only in your own browser’s local storage — never sent to us, and cleared whenever you clear your browser data. This site is supported by Google AdSense, which may use cookies and device identifiers to show ads, including personalized ones; you can review or turn off ad personalization at <a href="https://adssettings.google.com" target="_blank" rel="noopener">adssettings.google.com</a>. Live scores, rankings, and schedules come from CollegeFootballData.com’s public API, and highlight links go to YouTube — both are governed by their own privacy policies, not ours. This is a general summary, not legal advice.
+    </div>
   </footer>
 </div>
 
@@ -2076,11 +2080,6 @@ function badgeColors(team){
   const fg = relLuminance(bg) > 0.4 ? '#111111' : '#ffffff';
   return {bg, fg};
 }
-function teamBadge(team){
-  const {bg, fg} = badgeColors(team);
-  return `<span class="team-badge" style="background:${bg};color:${fg}">${teamInitials(team)}</span>`;
-}
-
 function applyTeamTheme(team){
   const colors = TEAM_COLORS[team];
   const root = document.documentElement.style;
@@ -2929,6 +2928,21 @@ document.addEventListener('click', (e) => {
   if (proTipPop && proTipPop.style.display !== 'none' && !e.target.closest('#proTipPopover')){
     proTipPop.style.display = 'none';
     document.getElementById('proTipBtn').setAttribute('aria-expanded', 'false');
+  }
+});
+document.addEventListener('click', (e) => {
+  const privacyBtn = e.target.closest && e.target.closest('#privacyBtn');
+  const privacyPop = document.getElementById('privacyPopover');
+  if (privacyBtn){
+    e.stopPropagation();
+    const nowOpen = privacyPop.style.display === 'none';
+    privacyPop.style.display = nowOpen ? '' : 'none';
+    privacyBtn.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+    return;
+  }
+  if (privacyPop && privacyPop.style.display !== 'none' && !e.target.closest('#privacyPopover')){
+    privacyPop.style.display = 'none';
+    document.getElementById('privacyBtn').setAttribute('aria-expanded', 'false');
   }
 });
 // HARD RULE, not just current behavior — read before "improving" this:
