@@ -1429,7 +1429,7 @@
     <button class="tab-btn" data-tab="rankings">Top 25</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
-    <button class="tab-btn tab-btn-saved" data-tab="saved">Saved →</button>
+    <button class="tab-btn tab-btn-saved" data-tab="saved">Step 3: Binge Highlights →</button>
   </div>
 
   <div class="ad-mobile-banner" id="tabAdSlot">
@@ -3239,6 +3239,30 @@ async function attachMustWatchBadge(rowEl, home, away, year){
   const meta = rowEl.querySelector('.game-meta');
   if (meta && !meta.querySelector('.must-watch-badge')) meta.insertAdjacentHTML('beforeend', mustWatchBadgeHtml(buzz));
 }
+function attrEscape(s){ return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+// Generic version of attachMustWatchBadge for views that render many
+// rows as an HTML string (Game Gravity, Top 25, Schedule) rather than
+// one DOM element at a time -- those rows leave a placeholder
+// <span class="must-watch-slot" data-home=... data-away=...> behind
+// wherever a finished game's highlights link appears, and this sweeps
+// a container for all of them once it's actually in the DOM, filling
+// each one in (or leaving it empty) independently.
+function fillMustWatchSlots(root, year){
+  if (!root) return;
+  root.querySelectorAll('.must-watch-slot').forEach(async (slot) => {
+    if (slot.dataset.filled) return;
+    slot.dataset.filled = '1';
+    const home = slot.dataset.home, away = slot.dataset.away;
+    if (!home || !away) return;
+    let buzz = getCachedBuzz(home, away, year);
+    if (buzz === undefined){
+      try { buzz = await fetchBuzz(home, away, year); setCachedBuzz(home, away, year, buzz); }
+      catch (e) { return; }
+    }
+    if (!buzz || !slot.isConnected) return;
+    slot.outerHTML = mustWatchBadgeHtml(buzz);
+  });
+}
 function renderSavedTab(){
   pruneExpiredSavedGames();
   const list = document.getElementById('savedGamesList');
@@ -3392,6 +3416,7 @@ function quickPeekButton(awayName, awayScore, homeName, homeScore, kickoffUTC){
 function renderWatch(r, team, showScores){
   const postTime = formatPostTime(r.kickoffUTC, r.network, team);
   const hasFinalScore = r.home_score !== null && r.away_score !== null;
+  const mustWatchSlot = hasFinalScore ? `<span class="must-watch-slot" data-home="${attrEscape(r.home)}" data-away="${attrEscape(r.away)}"></span>` : '';
   const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)} · ${r.network} ${renderStatusBadge(r.kickoffUTC)}</div>`;
   const gameKey = gameSaveKey(r.away, r.home);
   const save = saveGameButton(gameKey, { away:r.away, home:r.home, kickoffUTC:r.kickoffUTC, link:r.link, network:r.network, score:r.score ?? null, awayRank:r.awayRank ?? null, homeRank:r.homeRank ?? null });
@@ -3400,7 +3425,7 @@ function renderWatch(r, team, showScores){
     return `${kickoffLine}
     <div class="watch-row">
       <span class="watch-icon">✓</span>
-      <span class="watch-text final-score">FINAL: ${rankBadgeForResult(r, "away")}${r.away} ${r.away_score} – ${r.home_score} ${rankBadgeForResult(r, "home")}${r.home}</span> ${highlightsLinkHtml(r.away, r.home, 'Highlights →')}${save}
+      <span class="watch-text final-score">FINAL: ${rankBadgeForResult(r, "away")}${r.away} ${r.away_score} – ${r.home_score} ${rankBadgeForResult(r, "home")}${r.home}</span> ${highlightsLinkHtml(r.away, r.home, 'Highlights →')}${mustWatchSlot}${save}
     </div>`;
   }
   if (showScores && !hasFinalScore){
@@ -3411,7 +3436,7 @@ function renderWatch(r, team, showScores){
   }
   return `${kickoffLine}
   <div class="watch-row">
-    <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →', '▶')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${save}
+    <span class="watch-text">${highlightsLinkHtml(r.away, r.home, 'Watch free, spoiler-safe →', '▶')} <span class="eta">Up by ${postTime}</span></span>${quickPeekButton(r.away, r.away_score, r.home, r.home_score, r.kickoffUTC)}${mustWatchSlot}${save}
   </div>`;
 }
 
@@ -3514,6 +3539,7 @@ function renderCfpRulesCards(container, team, ranked){
   guide.className = 'next-step-guide';
   guide.innerHTML = `<p>Seen what you needed? Check the <a href="javascript:void(0)" onclick="switchTab('rankings')">Top 25</a> or your team's full <a href="javascript:void(0)" onclick="switchTab('schedule')">Schedule</a> next.</p>`;
   container.appendChild(guide);
+  fillMustWatchSlots(container, selectedSeason);
 }
 
 // Pinned teams — quick-switch chips for multi-team households or
@@ -3769,13 +3795,14 @@ function gameCell(g, forOpponentLabel, teamName, teamRank, revealResult){
       peek = ` <span class="quick-peek" data-score="${safePeekScore}" title="Hold to peek at the score">${EYE_ICON_SVG}</span>`;
     }
     const highlightsLink = highlightsLinkHtml(teamName, g.opp, 'Highlights →');
+    const mustWatchSlot = `<span class="must-watch-slot" data-home="${attrEscape(g.opp)}" data-away="${attrEscape(teamName)}"></span>`;
     const gameKey = gameSaveKey(teamName, g.opp);
     // Only this team's own rank is known here (it's the Top 25 row
     // we're already rendering) -- the prior opponent's rank isn't
     // part of this data, so that side stays unlabeled rather than
     // guessed at.
     const save = saveGameButton(gameKey, { away: teamName, home: g.opp, kickoffUTC: null, link: g.link, network: null, awayRank: teamRank ?? null, homeRank: null });
-    return `${resultText}${peek}${highlightsLink}${save}`;
+    return `${resultText}${peek}${highlightsLink}${mustWatchSlot}${save}`;
   }
   // "Next" game -- no result to gate, so no masking needed here at
   // all; this was just missing a save button entirely before.
@@ -3922,6 +3949,7 @@ function renderTop25(data, isPriorSnapshot){
     if (t.displayRank === 4) body.appendChild(dividerRow('— Bye: Top 4 seeds skip the first round of the CFP Playoff —'));
     if (t.displayRank === 12) body.appendChild(dividerRow('— Playoff Cutoff Line —'));
   });
+  fillMustWatchSlots(body, selectedSeason);
   showScores = realShowScores; // restore the real global state
 }
 
@@ -4084,10 +4112,11 @@ function renderSchedule(data, team){
       : '';
     row.innerHTML = `
       <span class="matchup-text">${resultPart}${tags}${matchupText}</span>
-      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${oddsText ? `<span class="odds">${oddsText}</span> ` : ''}${highlightsLinkHtml(awayTeam, homeTeam, 'Highlights →')}${save}${calendarButtonHtml(awayTeam, homeTeam, g.kickoffUTC, g.network)}${shareGameButton(awayTeam, homeTeam, g.kickoffUTC, g.network)}</span>
+      <span class="game-meta">Wk ${g.week} · ${formatKickoff(g.kickoffUTC, team)} ${oddsText ? `<span class="odds">${oddsText}</span> ` : ''}${highlightsLinkHtml(awayTeam, homeTeam, 'Highlights →')}${hasScore ? `<span class="must-watch-slot" data-home="${attrEscape(homeTeam)}" data-away="${attrEscape(awayTeam)}"></span>` : ''}${save}${calendarButtonHtml(awayTeam, homeTeam, g.kickoffUTC, g.network)}${shareGameButton(awayTeam, homeTeam, g.kickoffUTC, g.network)}</span>
     `;
     list.appendChild(row);
   });
+  fillMustWatchSlots(list, selectedSeason);
 }
 
 let _lastScheduleKey = null;
