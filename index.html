@@ -979,9 +979,9 @@
     cursor:pointer;
     user-select:none;
     -webkit-user-select:none;
-    padding:3px 6px;
-    border-radius:5px;
-    opacity:0.7;
+    padding:5px 9px;
+    border-radius:7px;
+    opacity:0.75;
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:#4ade80; }
@@ -1411,11 +1411,6 @@
         </label>
       </div>
     </div>
-
-    <button class="pro-tip-btn" id="proTipBtn" type="button" aria-expanded="false">🎬 Pro tip: block spoilers &amp; ads on YouTube →</button>
-    <div class="info-popover" id="proTipPopover" style="display:none;">
-      This site keeps scores off the page, but the video itself is still on YouTube -- and YouTube's own suggestions, comments, and autoplay queue are the single biggest spoiler leak once you click through. Lock it down first: install the free <a href="https://chromewebstore.google.com/detail/enboaomnljigfhfjfoalacienlhjlfil" target="_blank" rel="noopener">Untrap for YouTube</a> browser extension, open its settings, and turn on: hide video suggestions, hide comments, hide likes, hide ads, and always play at the highest quality. With all of that off screen, there's nothing left to flash a score at you or interrupt the highlight with a commercial.
-    </div>
   </header>
 
   <div class="step-indicator" id="stepIndicator"></div>
@@ -1441,9 +1436,14 @@
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
+  <p class="step-content-tag">Step 3: Binge Highlights</p>
   <section class="national-ticker">
     <h2 class="national-ticker-title">Saved Games</h2>
     <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
+    <button class="pro-tip-btn" id="proTipBtn" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;"><path d="M12 2 L4 5 V11 C4 16.5 7.5 20.5 12 22 C16.5 20.5 20 16.5 20 11 V5 Z"/></svg> Pro tip: block spoilers &amp; ads on YouTube →</button>
+    <div class="info-popover" id="proTipPopover" style="display:none;">
+      This site keeps scores off the page, but the video itself is still on YouTube -- and YouTube's own suggestions, comments, and autoplay queue are the single biggest spoiler leak once you click through, right where you're about to. Lock it down first: install the free <a href="https://chromewebstore.google.com/detail/enboaomnljigfhfjfoalacienlhjlfil" target="_blank" rel="noopener">Untrap for YouTube</a> browser extension, open its settings, and turn on: hide video suggestions, hide comments, hide likes, hide ads, and always play at the highest quality. With all of that off screen, there's nothing left to flash a score at you or interrupt the highlight with a commercial.
+    </div>
     <div class="saved-controls">
       <div class="saved-sort-group">
         <button class="saved-sort-btn" data-sort="gamegravity" onclick="setSavedSortMode('gamegravity')">Game Gravity<span class="tm">™</span></button>
@@ -3112,8 +3112,8 @@ document.addEventListener('click', (e) => {
     }, WATCHED_CLICK_TTL_MS + 500);
   }
 });
-const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-5px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
-const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-5px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+const BOOKMARK_ICON_SVG = '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-9px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+const BOOKMARK_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" stroke="currentColor" stroke-width="2" style="vertical-align:-9px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function saveGameButton(gameKey, gameData){
   const safeKey = gameKey.replace(/"/g, '&quot;');
   const safeData = JSON.stringify(gameData).replace(/"/g, '&quot;');
