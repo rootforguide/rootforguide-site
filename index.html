@@ -1582,6 +1582,16 @@
 </div>
 
 <script>
+// Stops the browser from restoring whatever scroll position was in
+// effect before a refresh (mobile Safari's pull-to-refresh, or any
+// reload/back-forward nav) -- without this, reloading mid-scroll drops
+// you back into the middle of the page, often on a still-loading,
+// mostly-empty section (an ad slot, a tab panel) instead of the top,
+// which reads as broken rather than "just refreshed." Set as the very
+// first thing this script does, before layout happens.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 /* ============================================================
    SAMPLE SEASON DATA
    Shaped the same way the live collegefootballdata.com API
