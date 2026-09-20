@@ -1123,6 +1123,23 @@
     color:var(--chalk-dim);
     max-width:60ch;
   }
+  .pro-tip-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:20px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--amber);
+    background:none;
+    border:1px dashed var(--panel-line);
+    border-radius:20px;
+    padding:6px 14px;
+    cursor:pointer;
+  }
+  .pro-tip-btn:hover{ border-color:var(--amber); }
+  .pro-tip-btn[aria-expanded="true"]{ border-style:solid; border-color:var(--amber); }
+  #proTipPopover a{ color:var(--amber); font-weight:600; }
   .popover-simple{
     margin:0 0 10px;
     padding-bottom:10px;
@@ -1393,6 +1410,11 @@
           <span class="spoiler-toggle-label">Reveal scores</span>
         </label>
       </div>
+    </div>
+
+    <button class="pro-tip-btn" id="proTipBtn" type="button" aria-expanded="false">🎬 Pro tip: block spoilers &amp; ads on YouTube →</button>
+    <div class="info-popover" id="proTipPopover" style="display:none;">
+      This site keeps scores off the page, but the video itself is still on YouTube -- and YouTube's own suggestions, comments, and autoplay queue are the single biggest spoiler leak once you click through. Lock it down first: install the free <a href="https://chromewebstore.google.com/detail/enboaomnljigfhfjfoalacienlhjlfil" target="_blank" rel="noopener">Untrap for YouTube</a> browser extension, open its settings, and turn on: hide video suggestions, hide comments, hide likes, hide ads, and always play at the highest quality. With all of that off screen, there's nothing left to flash a score at you or interrupt the highlight with a commercial.
     </div>
   </header>
 
@@ -2853,6 +2875,22 @@ document.addEventListener('click', (e) => {
 });
 document.getElementById('ggExplainerInfoIcon').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') document.getElementById('ggExplainerInfoIcon').click();
+});
+
+document.addEventListener('click', (e) => {
+  const proTipBtn = e.target.closest && e.target.closest('#proTipBtn');
+  const proTipPop = document.getElementById('proTipPopover');
+  if (proTipBtn){
+    e.stopPropagation();
+    const nowOpen = proTipPop.style.display === 'none';
+    proTipPop.style.display = nowOpen ? '' : 'none';
+    proTipBtn.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+    return;
+  }
+  if (proTipPop && proTipPop.style.display !== 'none' && !e.target.closest('#proTipPopover')){
+    proTipPop.style.display = 'none';
+    document.getElementById('proTipBtn').setAttribute('aria-expanded', 'false');
+  }
 });
 // HARD RULE, not just current behavior — read before "improving" this:
 // this status is computed from ONE flat, fixed duration (3.5 hrs)
