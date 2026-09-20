@@ -1001,6 +1001,12 @@
     color:var(--amber);
     margin-right:4px;
   }
+  .must-watch-badge{
+    font-weight:700;
+    color:var(--amber);
+    margin-left:6px;
+    white-space:nowrap;
+  }
   .highlights-ready{
     font-weight:700;
     color:var(--chalk);
@@ -3183,6 +3189,56 @@ function sortedSavedGames(){
   return copy; // 'custom' -- the array's own stored order
 }
 let dragFromKey = null;
+// "Must Watch" badge -- a spoiler-safe signal for how much attention a
+// finished game's highlight video is getting on YouTube (view/like/
+// comment counts rolled into one 0-100 score), sourced from the
+// Worker's mode=buzz. Never the video title or thumbnail (both often
+// carry the score) -- just the number. Cached client-side for a day,
+// same window as the Worker's own cache, so re-rendering this tab
+// doesn't re-hit the YouTube quota (only ~99 lookups/day available on
+// the free tier -- see the Worker's own comment on this).
+function buzzCacheKey(home, away, year){ return `buzz:${away}:${home}:${year}`; }
+function getCachedBuzz(home, away, year){
+  try {
+    const raw = localStorage.getItem(buzzCacheKey(home, away, year));
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.ts > 86400000) return undefined;
+    return parsed.buzz;
+  } catch (e) { return undefined; }
+}
+function setCachedBuzz(home, away, year, buzz){
+  try { localStorage.setItem(buzzCacheKey(home, away, year), JSON.stringify({ ts: Date.now(), buzz })); } catch (e) {}
+}
+async function fetchBuzz(home, away, year){
+  const url = `${WORKER_URL}/?mode=buzz&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}&year=${year}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Worker responded ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.buzz;
+}
+function mustWatchBadgeHtml(buzz){
+  if (!buzz) return '';
+  const views = (buzz.viewCount || 0).toLocaleString();
+  return ` <span class="must-watch-badge" title="${views} views on the highlight video">🔥 Must Watch: ${buzz.buzzScore}</span>`;
+}
+// Fills the badge in once buzz data resolves, without blocking the row
+// itself from rendering -- most rows won't have a finished game yet,
+// and the ones that do shouldn't hold up the rest of the list on a
+// YouTube round trip. Silently does nothing if the lookup fails (e.g.
+// the Worker's YOUTUBE_API_KEY isn't configured yet) -- a missing
+// badge is fine, a broken saved list isn't.
+async function attachMustWatchBadge(rowEl, home, away, year){
+  let buzz = getCachedBuzz(home, away, year);
+  if (buzz === undefined){
+    try { buzz = await fetchBuzz(home, away, year); setCachedBuzz(home, away, year, buzz); }
+    catch (e) { return; }
+  }
+  if (!buzz || !rowEl.isConnected) return;
+  const meta = rowEl.querySelector('.game-meta');
+  if (meta && !meta.querySelector('.must-watch-badge')) meta.insertAdjacentHTML('beforeend', mustWatchBadgeHtml(buzz));
+}
 function renderSavedTab(){
   pruneExpiredSavedGames();
   const list = document.getElementById('savedGamesList');
@@ -3229,6 +3285,7 @@ function renderSavedTab(){
       <span class="game-meta">${ggScore}${readyText}${g.network ? ' · ' + g.network : ''} ${status}${highlightsLink}${save}</span>
     `;
     list.appendChild(row);
+    if (readyStatus === 'likely-final') attachMustWatchBadge(row, g.home, g.away, selectedSeason);
   });
 }
 // Native HTML5 drag-and-drop, scoped to the saved list, active only
@@ -4523,6 +4580,28 @@ runIntroAnimation(() => {
     spinWeekJersey(WEEK);
     render();
   }).catch(() => {}); // silently keep the Week 1 placeholder if this fails -- not worth surfacing an error for
+
+  // The team dropdown's rank badges ("#14 BYU") came from the local
+  // RANKINGS array, which stayed frozen at Week 1's poll forever --
+  // correct once, then silently stale every week after, unlike the
+  // rest of the site (Game Gravity, Schedule, Top 25) which all pull
+  // genuinely live data from the Worker. Refresh RANKINGS itself from
+  // the same live Top 25 endpoint, then rebuild anything that already
+  // baked a badge in from the old data.
+  (async function refreshLiveRankBadges(){
+    try {
+      const week = (typeof POLL_WEEK !== 'undefined' && POLL_WEEK !== null) ? POLL_WEEK : WEEK;
+      const data = await fetchTop25(selectedSeason, week);
+      if (!data || !data.top25 || !data.top25.length) return;
+      RANKINGS.length = 0;
+      data.top25.forEach(t => RANKINGS.push({ rank: t.rank, school: t.school }));
+      const currentTeam = teamSelect.value;
+      populateTeams(conferenceSelect.value);
+      if (currentTeam) teamSelect.value = currentTeam;
+      renderPinnedUI(teamSelect.value);
+      render();
+    } catch (e) { /* keep whatever RANKINGS already had -- not worth surfacing an error for a badge */ }
+  })();
 });
 
 // Activates every AdSense slot on the page (the skyscrapers and the
