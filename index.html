@@ -1429,7 +1429,7 @@
     <button class="tab-btn" data-tab="rankings">Top 25</button>
     <button class="tab-btn" data-tab="schedule">Schedule</button>
     <span class="tab-nav-divider"></span>
-    <button class="tab-btn tab-btn-saved" data-tab="saved">Step 3: Binge Highlights →</button>
+    <button class="tab-btn tab-btn-saved" data-tab="saved">Step 3: Binge Your Highlights →</button>
   </div>
 
   <div class="ad-mobile-banner" id="tabAdSlot">
@@ -1443,7 +1443,7 @@
   </div>
 
   <div class="tab-panel" id="panelSaved" style="display:none;">
-  <p class="step-content-tag">Step 3: Binge Highlights</p>
+  <p class="step-content-tag">Step 3: Binge Your Highlights</p>
   <section class="national-ticker">
     <h2 class="national-ticker-title">Saved Games</h2>
     <p class="national-ticker-sub">Games you've bookmarked from any view — same spoiler rules apply here too.</p>
@@ -2750,7 +2750,7 @@ let hasWatchedThisSession = false;
 // Single source of truth for step wording -- both the full indicator
 // and the sticky bar version pull from this exact same list, so they
 // can't say two different things for the same step ever again.
-const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Binge Highlights'];
+const STEP_LABELS = ['Pick Your Team', 'Pick Your Games', 'Binge Your Highlights'];
 function renderStepIndicator(){
   const el = document.getElementById('stepIndicator');
   if (!el) return;
