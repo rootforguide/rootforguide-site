@@ -2587,18 +2587,24 @@ document.getElementById('pickerContinueBtn').addEventListener('click', () => {
   }
 });
 
-if (!firstFavoritedTeam()){
+// The picker block (Step 1) always belongs at the top, directly above
+// the tab bar -- for every visitor, not just first-timers. This used
+// to be skipped for anyone with an already-favorited team, which left
+// Step 1 stranded down near the footer, below all of Step 2's content,
+// for every returning visitor -- exactly backwards, since a returning
+// visitor is the one most likely to want to change teams. Moved
+// unconditionally now, on every load.
+{
   const wrapper = document.getElementById('pickerAndPinned');
   const tabNav = document.getElementById('tabNav');
   if (wrapper && tabNav && tabNav.parentNode){
     tabNav.parentNode.insertBefore(wrapper, tabNav);
   }
 }
-// Keeps the "Step 2" content tag directly above the tab bar no matter
-// where the picker block above ended up (new visitors get it moved up
-// near the top; returning visitors with a favorited team leave it near
-// the footer instead) -- this tag's only job is labeling the tab bar
-// itself as Step 2's content, so it always re-anchors right before it.
+// Keeps the "Step 2" content tag directly above the tab bar -- its
+// only job is labeling the tab bar itself as Step 2's content, so it
+// always re-anchors right before it, right after the picker block
+// moved above.
 {
   const step2Tag = document.getElementById('step2ContentTag');
   const tabNavEl = document.getElementById('tabNav');
@@ -2621,6 +2627,12 @@ const spoilerToggle = document.getElementById('spoilerToggle');
 spoilerToggle.addEventListener('change', () => {
   showScores = spoilerToggle.checked;
   render();
+  // Revealing/hiding scores can reshuffle content height all over the
+  // page (Colley ranks, records, trends, whole Top 25 rows appearing
+  // or masking) -- scrolling back to the top after every toggle keeps
+  // whoever flipped it from ending up stranded partway down a page
+  // that just changed shape underneath them.
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // Plays once, right after page load -- a brief "locking into spoiler-safe
