@@ -2777,6 +2777,20 @@ function renderStepIndicator(){
     { label: STEP_LABELS[1], done: step3Done, active: step1Done && !step3Done },
     { label: STEP_LABELS[2], done: step3Done, active: step3Done }
   ];
+  // Detach the pinned/saved-team chip BEFORE wiping this container's
+  // contents -- after the first render it lives inside `el` (moved
+  // there below), and `el.innerHTML = ...` destroys whatever is
+  // currently inside it, pinnedRow included, if it isn't rescued
+  // first. .remove() only detaches the actual node (with its already-
+  // attached click handlers intact); it does not destroy it, so
+  // getElementById('pinnedRow') afterward finding null (this bug,
+  // now fixed) was the real cause of renderPinnedUI() crashing on
+  // every render after the very first one -- which silently froze
+  // Game Gravity/Top 25/Schedule at whatever they'd last shown,
+  // since that crash aborted the rest of render() before it reached
+  // any of them.
+  const pinnedRowEl = document.getElementById('pinnedRow');
+  if (pinnedRowEl) pinnedRowEl.remove();
   el.innerHTML = steps.map((s, i) => {
     const cls = s.done ? 'done' : (s.active ? 'active' : '');
     const num = s.done ? '✓' : '•';
@@ -2786,14 +2800,9 @@ function renderStepIndicator(){
     const clickableCls = clickable ? ' step-item-clickable' : '';
     return `<div class="step-item ${cls}${clickableCls}"${clickAttr}><span class="step-num">${num}</span><span class="step-label">Step ${i + 1}: ${s.label}</span></div>${arrow}`;
   }).join('');
-  // The pinned/saved-team chip is the visual confirmation that Step 1
-  // is done -- it belongs right next to that step, not in its own
-  // block below the whole indicator (which read as cramped/orphaned,
-  // squeezed under Step 3 with nothing explaining what it was). Since
-  // this innerHTML assignment just replaced the DOM, re-insert the
-  // (persistent, event-bound) pinnedRow element right after the Step 1
-  // item -- before its arrow -- every time this renders.
-  const pinnedRowEl = document.getElementById('pinnedRow');
+  // Re-insert the (now-detached, still-alive) pinnedRow right after
+  // the fresh Step 1 item -- before its arrow -- every time this
+  // renders.
   const step1ItemEl = el.querySelector('.step-item');
   if (pinnedRowEl && step1ItemEl) step1ItemEl.insertAdjacentElement('afterend', pinnedRowEl);
   // Same progress kept visible in the sticky tab bar itself, so
