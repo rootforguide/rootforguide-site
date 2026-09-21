@@ -976,13 +976,22 @@
     background:var(--panel-line);
   }
   .save-game-btn{
-    display:inline-block;
+    display:inline-flex;
+    align-items:center;
+    gap:3px;
+    vertical-align:middle;
+    white-space:nowrap;
     cursor:pointer;
     user-select:none;
     -webkit-user-select:none;
     padding:5px 9px;
     border-radius:7px;
     opacity:0.75;
+  }
+  .save-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.2px;
   }
   .save-game-btn:hover{ opacity:1; background:var(--panel-line); }
   .save-game-btn.saved{ opacity:1; color:#4ade80; }
@@ -1916,16 +1925,18 @@ function watchLink(home, away){
     : len === 'long' ? 'full game highlights'
     : 'extended highlights';
   const q = encodeURIComponent(`${away} vs ${home} ${phrase} ${YEAR}`);
-  // A trailing dot after "com" (a technically-valid, fully-qualified
-  // hostname -- DNS treats "youtube.com." exactly the same as
-  // "youtube.com") makes this string not literally match "youtube.com"
-  // the way the YouTube app's Android/iOS deep-link registration
-  // expects. That mismatch is what keeps this link opening in the
-  // browser itself instead of handing off to the app -- which matters
-  // here specifically because the app's autoplay/related-videos rail
-  // is far more likely to surface a real score or spoiler than the
-  // plain browser search results this points to.
-  return `https://www.youtube.com./results?search_query=${q}`;
+  // REVERTED (do not re-add) -- this used to point at
+  // "https://www.youtube.com./results?..." (trailing dot after
+  // "com") to stop iOS/Android from handing the link to the native
+  // YouTube app, whose autoplay/related-videos rail can leak a
+  // score. But a domain string that's technically-but-not-literally
+  // "youtube.com" is also exactly what phishing links use to dodge
+  // naive domain-blocklist checks -- Safari's Safe Browsing-style
+  // heuristic flagged it as "may be impersonating www.youtube.com",
+  // a scary warning real users hit. That false-positive trust hit is
+  // worse than the spoiler risk this was guarding against, so it's
+  // reverted to a plain, real youtube.com link.
+  return `https://www.youtube.com/results?search_query=${q}`;
 }
 function showHighlightLengthPicker(gameKey, away, home){
   const existing = document.getElementById('highlightLengthPicker');
@@ -3161,7 +3172,7 @@ function saveGameButton(gameKey, gameData){
   const safeKey = gameKey.replace(/"/g, '&quot;');
   const safeData = JSON.stringify(gameData).replace(/"/g, '&quot;');
   const saved = isGameSaved(gameKey);
-  return ` <span class="save-game-btn${saved ? ' saved' : ''}" data-game-key="${safeKey}" data-game-data="${safeData}" title="${saved ? 'Remove from saved' : 'Save this game'}">${saved ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG}</span>`;
+  return ` <span class="save-game-btn${saved ? ' saved' : ''}" data-game-key="${safeKey}" data-game-data="${safeData}" title="${saved ? 'Remove from saved' : 'Save this game'}">${saved ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG}<span class="save-label">${saved ? 'Saved' : 'Save'}</span></span>`;
 }
 document.addEventListener('click', (e) => {
   const btn = e.target.closest && e.target.closest('.save-game-btn');
@@ -3172,7 +3183,7 @@ document.addEventListener('click', (e) => {
   toggleSavedGame(key, data);
   if (isGameSaved(key)) showHighlightLengthPicker(key, data.away, data.home);
   btn.classList.toggle('saved');
-  btn.innerHTML = isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG;
+  btn.innerHTML = (isGameSaved(key) ? BOOKMARK_ICON_FILLED_SVG : BOOKMARK_ICON_SVG) + '<span class="save-label">' + (isGameSaved(key) ? 'Saved' : 'Save') + '</span>';
   btn.title = isGameSaved(key) ? 'Remove from saved' : 'Save this game';
   // A quick, satisfying pop on the moment of SAVING specifically (not
   // un-saving) -- confirmation feedback, not decoration on every click.
