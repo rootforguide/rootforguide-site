@@ -1659,17 +1659,23 @@ const WEEKLY_GAMES = { 0: WEEK_0_GAMES };
 const WEEKLY_LINES = { 0: WEEK_0_LINES };
 
 const RANKINGS = [
-  {rank:1,school:"Ohio State"},{rank:2,school:"Oregon"},{rank:3,school:"Georgia"},
-  {rank:4,school:"Notre Dame"},{rank:5,school:"Texas"},{rank:6,school:"Indiana"},
-  {rank:7,school:"Miami (FL)"},{rank:8,school:"Texas A&M"},{rank:9,school:"Ole Miss"},
-  {rank:10,school:"Oklahoma"},{rank:11,school:"LSU"},{rank:12,school:"Alabama"},
-  {rank:13,school:"Texas Tech"}, // real Week 1 AP Poll — swapped from preseason (12/13 flipped)
-  {rank:14,school:"BYU"},{rank:14,school:"USC"}, // confirmed tied at 14 (839 points each)
-  {rank:16,school:"Michigan"},{rank:17,school:"Washington"},{rank:18,school:"Penn State"},
-  {rank:21,school:"Utah"}, // confirmed, 304 points
-  {rank:22,school:"Iowa"},
-  {rank:23,school:"Houston"} // confirmed
-  // 19-20 not confirmed in sourcing, left out rather than guessed
+  // AP Top 25, poll released Sun Sept 20 2026 (through games played Sept 19) --
+  // the most recent poll confirmed at the time this fallback was last updated.
+  // Sourced from ncaa.com's official AP poll table, with BYU's #9 spot
+  // cross-confirmed against BYU Athletics' own site and on3.com. This is
+  // still a static snapshot, not live data -- it only ever displays when
+  // the live Worker call fails (see hasStaticFallback()), so it will drift
+  // stale again after the next real poll comes out. Update it the same way
+  // if that happens again before the live CFBD outage is resolved.
+  {rank:1,school:"Texas"},{rank:2,school:"Georgia"},{rank:3,school:"Notre Dame"},
+  {rank:4,school:"Ole Miss"},{rank:5,school:"Indiana"},{rank:6,school:"Miami (FL)"},
+  {rank:7,school:"Ohio State"},{rank:8,school:"Alabama"},{rank:9,school:"BYU"},
+  {rank:10,school:"LSU"},{rank:11,school:"Texas Tech"},{rank:12,school:"USC"},
+  {rank:13,school:"Penn State"},{rank:14,school:"Tennessee"},{rank:15,school:"Utah"},
+  {rank:16,school:"Louisville"},{rank:17,school:"Iowa"},{rank:18,school:"Michigan"},
+  {rank:19,school:"Missouri"},{rank:20,school:"Oregon"},{rank:21,school:"Florida"},
+  {rank:22,school:"SMU"},{rank:23,school:"Texas A&M"},{rank:24,school:"Mississippi State"},
+  {rank:25,school:"Houston"}
 ];
 
 // The industry-standard switch: AP Top 25 is the reference poll for
@@ -1685,12 +1691,13 @@ function pollSource(week){
   return week >= CFP_START_WEEK ? "CFP" : "AP";
 }
 
-// Rank movement vs. the previous week's poll. Empty right now because
-// Week 1 IS the preseason poll — there's no earlier ranking to compare
-// against yet, same as real broadcasts showing no arrow in Week 1.
-// Once Week 2's poll is loaded, populate this with {team: delta}
-// (positive = moved up, negative = moved down) and arrows appear
-// automatically wherever rankBadge is used.
+// Rank movement vs. the previous week's poll. Left empty rather than
+// guessed -- this fallback RANKINGS snapshot (see above) isn't updated
+// every week, so week-over-week deltas for every one of the 25 teams
+// aren't reliably known at whatever moment this was last refreshed.
+// Populate with {team: delta} (positive = moved up, negative = moved
+// down) only when actually sourced, and arrows appear automatically
+// wherever rankBadge is used.
 const RANK_MOVEMENT = {};
 function rankBadge(team, withArrow){
   const r = rankOf(team);
