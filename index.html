@@ -3500,7 +3500,7 @@ function renderWatch(r, team, showScores){
   const postTime = formatPostTime(r.kickoffUTC, r.network, team);
   const hasFinalScore = r.home_score !== null && r.away_score !== null;
   const mustWatchSlot = hasFinalScore ? `<span class="must-watch-slot" data-home="${attrEscape(r.home)}" data-away="${attrEscape(r.away)}"></span>` : '';
-  const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)} · ${r.network} ${renderStatusBadge(r.kickoffUTC)}</div>`;
+  const kickoffLine = `<div class="kickoff-line">${formatKickoff(r.kickoffUTC, team)}${r.network ? ` · ${r.network}` : ''} ${renderStatusBadge(r.kickoffUTC)}</div>`;
   const gameKey = gameSaveKey(r.away, r.home);
   const save = saveGameButton(gameKey, { away:r.away, home:r.home, kickoffUTC:r.kickoffUTC, link:r.link, network:r.network, score:r.score ?? null, awayRank:r.awayRank ?? null, homeRank:r.homeRank ?? null });
 
