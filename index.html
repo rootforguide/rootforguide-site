@@ -1867,6 +1867,39 @@ const LINES_WEEK_1 = {
 WEEKLY_GAMES[1] = GAMES_WEEK_1;
 WEEKLY_LINES[1] = LINES_WEEK_1;
 
+// Week 4 (Sept 26, 2026) -- hand-curated backup data added while CFBD's
+// live feed remains blocked by an account-side outage (see project
+// status notes). Every game below was individually verified against a
+// named report or a team's own athletics-site recap -- not bulk-scraped
+// from a scoreboard table, after one of those tables was caught giving
+// backwards/wrong scores for multiple games during sourcing. Only games
+// that could be confirmed this way are included; the rest of this
+// week's slate is left out rather than guessed, same policy as
+// WEEK_0_GAMES above. No spread data was sourced for this week --
+// LINES_WEEK_4 is intentionally empty, which scoreWeek() already
+// handles gracefully (an unmatched game id just shows no favored-team
+// / win-prob line).
+const GAMES_WEEK_4 = [
+  {id:701, home_team:"Tennessee", away_team:"Texas", home_score:17, away_score:20},
+  {id:702, home_team:"Georgia", away_team:"Oklahoma", home_score:41, away_score:13, kickoffUTC:"2026-09-26T18:30:00Z"},
+  {id:703, home_team:"Purdue", away_team:"Notre Dame", home_score:10, away_score:49},
+  {id:704, home_team:"USC", away_team:"Oregon", home_score:27, away_score:41},
+  {id:705, home_team:"LSU", away_team:"Texas A&M", home_score:35, away_score:6},
+  {id:706, home_team:"Florida", away_team:"Ole Miss", home_score:52, away_score:28},
+  {id:707, home_team:"Michigan", away_team:"Iowa", home_score:19, away_score:20},
+  {id:708, home_team:"Penn State", away_team:"Wisconsin", home_score:20, away_score:24},
+  {id:709, home_team:"Iowa State", away_team:"Utah", home_score:17, away_score:31},
+  {id:710, home_team:"Ohio State", away_team:"Illinois", home_score:42, away_score:19},
+  {id:711, home_team:"South Carolina", away_team:"Alabama", home_score:18, away_score:49},
+  {id:712, home_team:"Texas Tech", away_team:"Sam Houston", home_score:49, away_score:14, kickoffUTC:"2026-09-26T14:00:00Z"},
+  {id:713, home_team:"Louisville", away_team:"Wake Forest", home_score:27, away_score:30},
+  {id:714, home_team:"Mississippi State", away_team:"Missouri", home_score:31, away_score:24}
+];
+const LINES_WEEK_4 = {};
+
+WEEKLY_GAMES[4] = GAMES_WEEK_4;
+WEEKLY_LINES[4] = LINES_WEEK_4;
+
 let GAMES = WEEKLY_GAMES[WEEK];
 let LINES = WEEKLY_LINES[WEEK];
 
