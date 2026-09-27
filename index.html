@@ -1630,8 +1630,8 @@ window.scrollTo(0, 0);
    ============================================================ */
 
 const YEAR = 2026;
-let WEEK = 1; // starting placeholder -- corrected to the real current week right after page load, via fetchCurrentWeek() below
-let POLL_WEEK = 1; // separate from WEEK -- tracks whichever week's poll has actually been PUBLISHED, which can lag or lead the game-week boundary (AP/CFP publish on their own schedule, not tied to game days). Used specifically for the Rankings table, so it shifts exactly when a new poll goes up, not before.
+let WEEK = 4; // manually corrected 2026-09-27 (real current week, per CFBD's own week-0-based calendar: Week 0 = Aug 28-29, Week 1 = Sept 5, ... Week 4 = Sept 26 weekend) while the live fetchCurrentWeek() below is blocked by an account-side CFBD outage -- still just a placeholder, self-corrects the moment that call succeeds again
+let POLL_WEEK = 4; // manually corrected alongside WEEK above, 2026-09-27 -- matches WEEK since the most recently published poll (Sept 20, used to refresh RANKINGS above) is the one in effect for week 4. separate from WEEK -- tracks whichever week's poll has actually been PUBLISHED, which can lag or lead the game-week boundary (AP/CFP publish on their own schedule, not tied to game days). Used specifically for the Rankings table, so it shifts exactly when a new poll goes up, not before.
 
 // Determines the real current week from the Worker's own calendar
 // lookup, comparing today's actual date against real week boundaries
@@ -2229,6 +2229,15 @@ function networkConfidence(candTeam){
 }
 
 function scoreWeek(team){
+  // Defensive: GAMES is only populated for weeks that have real
+  // hand-curated backup data (see WEEKLY_GAMES / hasStaticFallback()
+  // above). The main results view already checks hasStaticFallback()
+  // before ever calling this, but doShare()/buildShareText() don't --
+  // without this guard, clicking Share during a live-data outage for
+  // any week beyond that backup data would throw here instead of
+  // just having nothing to share.
+  if (!GAMES) return [];
+
   const userRank = rankOf(team);
   const resume = buildResume(team);
   const myConference = conferenceOf(team);
